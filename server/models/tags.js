@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const tagModelSchema = new Schema({
+    tid: {
+        type: String,
+        required: [true, "no id given"]
+    },
     name: {
         type: String,
         required: [true, "no name given"]

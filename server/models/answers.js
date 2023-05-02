@@ -1,10 +1,13 @@
 const date = new Date(Date.now());
-const formattedDate = date.toLocaleString();
 
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const answerModelSchema = new Schema({
+    aid: {
+        type: String,
+        required: [true, "no id given"]
+    },
     text: {
         type: String,
         required: [true, "no text given"]
@@ -15,7 +18,7 @@ const answerModelSchema = new Schema({
     },
     ans_date_time: {
         type: Date,
-        default: formattedDate
+        default: date
     },
     url: {
         type: String,

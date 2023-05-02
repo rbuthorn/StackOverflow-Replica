@@ -1,10 +1,13 @@
 const date = new Date(Date.now());
-const formattedDate = date.toLocaleString();
 
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const questionModelSchema = new Schema({
+    qid: {
+        type: String,
+        required: [true, "no id given"]
+    },
     title:{
         type: String,
         requried: [true, "no title given"],
@@ -28,7 +31,7 @@ const questionModelSchema = new Schema({
     },
     ask_date_time: {
         type: Date,
-        default: formattedDate
+        default: date
     },
     views: {
         type: Number,
