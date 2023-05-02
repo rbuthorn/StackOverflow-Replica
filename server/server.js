@@ -64,12 +64,13 @@ process.on('SIGINT', () => {
     .catch((err) => console.log(err));
     }
     console.log('process terminated');
+    process.exit();
     });
 
 
-app.get('/allTags', (req, res) => {
+app.get('/allTags', async (req, res) => {
     //Query the database for all documents in the MyModel collection
-    Tag.find()
+    await Tag.find()
     .then(docs => { res.send(docs);
         })
     .catch(err => {
@@ -78,9 +79,9 @@ app.get('/allTags', (req, res) => {
         // Send the result back to the client        
     });
 
-app.get('/allQuestions', (req, res) => {
+app.get('/allQuestions', async (req, res) => {
     //Query the database for all documents in the MyModel collection
-    Question.find()
+    await Question.find()
     .then(docs => { res.send(docs);
         })
     .catch(err => {
@@ -89,9 +90,9 @@ app.get('/allQuestions', (req, res) => {
         // Send the result back to the client        
 });
 
-app.get('/allAnswers', (req, res) => {
+app.get('/allAnswers', async (req, res) => {
     //Query the database for all documents in the MyModel collection
-    Answer.find()
+    await Answer.find()
     .then(docs => { res.send(docs);
         })
     .catch(err => {

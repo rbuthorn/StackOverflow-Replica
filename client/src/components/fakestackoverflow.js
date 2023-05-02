@@ -10,38 +10,17 @@ export default class FakeStackOverflow extends React.Component {
 
 function FakeStackOverflowFunc() {
   const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
+  const [tags, setTags] = useState([]);
+  useEffect(() => {
+    getAllAnswers();
+    getAllQuestions();
+    getAllTags();
+  }, []);
 
-  function getAllTags(){
-    axios.get("http://localhost:8000/allTags")
-    .then(function(res) {
-      return res.data;
-    })
-      .catch(err=>{
-        console.log(err);
-      });
-  }
+  //AFTER THAT: write code to create(and query?) questions and save them to the model -- in this code make sure to update questions using setQuestions()
 
-    function getAllQuestions(){
-      axios.get("http://localhost:8000/allQuestions")
-      .then(function(res) {
-        setQuestions(res.data)
-      })
-        .catch(err=>{
-          console.log(err);
-        });
-    }
-
-    function getAllAnswers(){
-      axios.get("http://localhost:8000/allAnswers")
-      .then(res => {
-        return res.data;
-      })
-        .catch(err=>{
-          console.log(err);
-        });
-    }
-
-
+  //THEN: check the website to make sure the code works, if it doesn't --try deleting all references to model.data.questions and replacing with db queries
   const model = new Model();
   return <Content model={model} />;
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
@@ -104,75 +83,28 @@ function FakeStackOverflowFunc() {
     const [currentSearch, setCurrentSearch] = useState(null);
 
     const renderContent = () => {
-      var currQuestions;
+      var currQuestions = [];
       switch (activeTab) {
         // questions page with newest/active/unanswered
         case 0:
           switch (activeButton) {
             case 0:
-              currQuestions = model.sortNewest();
+              currQuestions = sortNewest();
               break;
             case 1:
-              currQuestions = model.displayActive();
+              currQuestions = displayActive();
               break;
             case 2:
-              currQuestions = model.displayUnanswered();
+              currQuestions = displayUnanswered();
               break;
             case 3:
-              currQuestions = [];
-              const questions = getAllQuestions();
-              for (let i = 0; i < questions.length; i++) {
-                for (let j = 0; j < questions[i].tagIds.length; j++) {
-                  if (questions[i].tagIds[j] === activeTag) {
-                    currQuestions.push(questions[i]);
-                    break;
-                  }
-                }
-              }
+              currQuestions = displaySameTagQuestions(activeTag);
               break;
             case 4:
-              const qs = model.data.questions;
-              const words = currentSearch.trim().toLowerCase().split(/\s+/);
-              const results = [];
-
-              for (const question of qs) {
-                let matchFound = false;
-                for (const word of words) {
-                  if (
-                    !word.startsWith("[") &&
-                    !word.endsWith("]") &&
-                    (question.title.toLowerCase().includes(word) ||
-                      question.text.toLowerCase().includes(word))
-                  ) {
-                    matchFound = true;
-                    break;
-                  }
-                }
-                for (const word of words) {
-                  if (word.startsWith("[") && word.endsWith("]")) {
-                    const tagName = word.slice(1, -1);
-                    if (
-                      question.tagIds.some(
-                        (tagId) =>
-                          model.data.tags
-                            .find((tag) => tag.tid === tagId)
-                            .name.toLowerCase() === tagName.toLowerCase()
-                      )
-                    ) {
-                      matchFound = true;
-                      break;
-                    }
-                  }
-                }
-                if (matchFound) {
-                  results.push(question);
-                }
-              }
-              results.map((question) => model.data.questions.indexOf(question));
-              currQuestions = results;
+              currQuestions = searchByInput(currentSearch);
               break;
             default:
-              currQuestions = model.displayNewest();
+              currQuestions = sortNewest();
               break;
           }
           return (
@@ -375,7 +307,7 @@ function FakeStackOverflowFunc() {
 
     const handleTagClick = (event) => {
       event.preventDefault();
-      setActiveTag(event.target.id);
+      setActiveTag(event.target.id);  //id refers to html id of object, not the tid.
       setActiveTab(0);
       setActiveButton(3);
     };
@@ -427,7 +359,7 @@ function FakeStackOverflowFunc() {
                 <div key={question.qid} className="qstnBox">
                   <div className="ansViews qstnContent">
                     <span className="ansPartOfQstnDisplay">
-                      {question.ansIds.length} answers
+                      {question.answers.length} answers
                     </span>
                     <span className="viewPartOfQstnDisplay">
                       {question.views} views
@@ -445,14 +377,14 @@ function FakeStackOverflowFunc() {
                       {question.title}
                     </button>
                     <div className="qTagBox">
-                      {question.tagIds.map((tagId) => (
+                      {question.tags.map((tid) => (
                         <div
-                          key={tagId}
-                          id={tagId}
+                          key={tid}
+                          id={tid}
                           className="qTag"
                           onClick={handleTagClick}
                         >
-                          {model.getNameByTid(tagId)}
+                          {tid} //change to name later 
                         </div>
                       ))}
                     </div>
@@ -463,7 +395,7 @@ function FakeStackOverflowFunc() {
                     </span>
                     <span className="datePartOfQstnDisplay">
                       {" "}
-                      asked {model.formattedDateOfQstn(question)}
+                      asked {formattedDateOfQstn(question)}
                     </span>
                   </div>
                 </div>
@@ -525,8 +457,6 @@ function FakeStackOverflowFunc() {
           }
         }
       }
-      console.log(tempText);
-
       if (username.length === 0) {
         setUsernameError(true);
         badInput = true;
@@ -565,7 +495,7 @@ function FakeStackOverflowFunc() {
         const emptyAnsArr = [];
         const date = new Date();
         model.data.questions.push({
-          qid: "q" + (getAllQuestions().length + 1),
+          qid: "q" + (questions.length + 1),
           title: title,
           text: tempText,
           tagIds: tagsArr,
@@ -654,10 +584,10 @@ function FakeStackOverflowFunc() {
   }
 
   function AnswersPage({ model, setActiveTab, activeQuestionQid }) {
-    const question = model.getQuestionById(activeQuestionQid);
+    const question = getQuestionById(activeQuestionQid);
     let answers = [];
     for (let i = 0; i < question.ansIds.length; i++)
-      answers.push(model.getAnswerById(question.ansIds[i]));
+      answers.push(getAnswerById(question.ansIds[i]));
     model.sortAnsByDate(answers);
     function handleAnsQues(event) {
       event.preventDefault();
@@ -690,7 +620,7 @@ function FakeStackOverflowFunc() {
             <div className="qAskedBy">
               <span id="userAnsrPage">{question.askedBy}</span>
               <span id="dateAnsrPage">
-                {model.formattedDateOfQstn(question)}
+                {formattedDateOfQstn(question)}
               </span>
             </div>
           </div>
@@ -706,7 +636,7 @@ function FakeStackOverflowFunc() {
               <div className="aPageAskedBy">
                 <span className="userAnsrPage">{answer.ansBy}</span>
                 <span className="dateAnsrPage">
-                  {model.formattedDateOfAns(answer)}
+                  {formattedDateOfAns(answer)}
                 </span>
               </div>
             </div>
@@ -720,7 +650,7 @@ function FakeStackOverflowFunc() {
   }
 
   function TagsPage({ model, setActiveTab, setActiveTag, setActiveButton }) {
-    var tags = model.data.tags;
+    const currTags = [...tags];
     const handleTagClick = (event) => {
       event.preventDefault();
       setActiveButton(3);
@@ -730,7 +660,7 @@ function FakeStackOverflowFunc() {
     return (
       <div className="noDisplay" id="tagPage">
         <div id="tagHeaderContainer">
-          <h3>{tags.length} Tags</h3>
+          <h3>{currTags.length} Tags</h3>
           <h3>All Tags</h3>
           <button type="button" id="askQuestionBtnInTag">
             {" "}
@@ -738,7 +668,7 @@ function FakeStackOverflowFunc() {
           </button>
         </div>
         <div id="tagContainer">
-          {tags.map((tag) => (
+          {currTags.map((tag) => (
             <div className="taxBoxContainer" key={tag.tid}>
               <div className="tagBox">
                 <a href="/" id={tag.tid} onClick={handleTagClick}>
@@ -754,4 +684,260 @@ function FakeStackOverflowFunc() {
       </div>
     );
   }
+
+    function displaySameTagQuestions(activeTag){
+      const currQuestions = [];
+      for (let i = 0; i < questions.length; i++) {
+        for (let j = 0; j < questions[i].tags.length; j++) {
+          if (questions[i].tags[j].name === activeTag) {
+            currQuestions.push(questions[i]);
+            break;
+          }
+        }
+      }
+      return currQuestions;
+    }
+
+    function sortNewest() {
+      let sortedQstns = [...questions];
+      const stack = [[0, sortedQstns.length - 1]];
+      while (stack.length > 0) {
+        const [left, right] = stack.pop();
+        if (left >= right) {
+          continue;
+        }
+        let i = left;
+        let j = right;
+        const pivot = sortedQstns[Math.floor((left + right) / 2)].askDate;
+        while (i <= j) {
+          while (sortedQstns[i].askDate > pivot) {
+            i++;
+          }
+          while (sortedQstns[j].askDate < pivot) {
+            j--;
+          }
+          if (i <= j) {
+            const temp = sortedQstns[i];
+            sortedQstns[i] = sortedQstns[j];
+            sortedQstns[j] = temp;
+            i++;
+            j--;
+          }
+        }
+        if (left < j) {
+          stack.push([left, j]);
+        }
+        if (i < right) {
+          stack.push([i, right]);
+        }
+      }
+      return sortedQstns;
+    }
+  
+    function displayActive() {
+      const arrOfActiveQstns = [];
+      const currQuestions = [...questions];
+      for (let i = 0; i < currQuestions.length; i++) {
+        const mostRecentAnsDate = getMostRecentAnsDate(currQuestions[i].qid);
+        if (mostRecentAnsDate) {
+          arrOfActiveQstns.push({
+            question: currQuestions[i],
+            mostRecentAnsDate: mostRecentAnsDate,
+          });
+        }
+      }
+      arrOfActiveQstns.sort((a, b) => b.mostRecentAnsDate - a.mostRecentAnsDate);
+      return arrOfActiveQstns.map((item) => item.question);
+    }
+  
+    function getMostRecentAnsDate(qid) {
+      const qstn = getQuestionById(qid);
+      const qstnAnswers = qstn.answers;
+      const ansIds = qstnAnswers.map(answer => answer.id);
+      let mostRecentAnsDate = null;
+      for (let i = 0; i < ansIds.length; i++) {
+        const ansDate = getAnswerById(ansIds[i]).ansDate;
+        if (!mostRecentAnsDate || ansDate > mostRecentAnsDate) {
+          mostRecentAnsDate = ansDate;
+        }
+      }
+      return mostRecentAnsDate;
+    }
+  
+    function displayUnanswered() {
+      const currQuestions = [...questions];
+      const arrOfUnansweredQstns = [];
+      for (let i = 0; i < currQuestions.length; i++) {
+        if (currQuestions[i].answers.length === 0) {
+          arrOfUnansweredQstns.push(currQuestions[i]);
+        }
+      }
+      return arrOfUnansweredQstns;
+    }
+
+    function getQuestionById(qid) {
+      const currQuestions = [...questions];
+      for (let i = 0; i < currQuestions.length; i++) {
+        if (currQuestions[i].qid === qid) {
+          return currQuestions[i];
+        }
+      }
+      return -1;
+    }
+
+    function getAnswerById(id) {
+      const currAnswers = [...answers];
+      for (let i = 0; i < currAnswers.length; i++) {
+        if (currAnswers[i].aid === id) {
+          return currAnswers[i];
+        }
+      }
+      return -1;
+    }
+
+    function getAllTags(){
+      axios.get("http://localhost:8000/allTags")
+      .then(function(res) {
+        setTags(res.data)
+      })
+        .catch(err=>{
+          console.log(err);
+        });
+    }
+  
+      function getAllQuestions(){
+        axios.get("http://localhost:8000/allQuestions")
+        .then(function(res) {
+          setQuestions(res.data);
+        })
+          .catch(err=>{
+            console.log(err);
+          });
+      }
+  
+      function getAllAnswers(){
+        axios.get("http://localhost:8000/allAnswers")
+        .then(res => {
+          setAnswers(res.data);
+        })
+          .catch(err=>{
+            console.log(err);
+          });
+      }
+
+      function formattedDateOfQstn(qstn) {
+        const currentDateTime = Date.now() / 1000;
+        const askDate = new Date(qstn.ask_date_time);
+        const askDateInSecs = askDate.getTime() / 1000;
+        const timeSincePost = currentDateTime - askDateInSecs; // in seconds
+    
+        const timeOfPost = new Date(askDateInSecs * 1000);
+        const month = timeOfPost.toLocaleString("default", { month: "short" });
+        const day = timeOfPost.getDate();
+        const year = timeOfPost.getFullYear();
+        let time = timeOfPost.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+    
+        if (timeSincePost < 60) {
+          return Math.round(timeSincePost) + " seconds ago.";
+        } else if (timeSincePost >= 60 && timeSincePost < 3600) {
+          return Math.round(timeSincePost / 60) + " minutes ago.";
+        } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
+          return Math.round(timeSincePost / 3600) + " hours ago.";
+        } else if (timeSincePost >= 86400 && timeSincePost < 31536000) {
+          // seconds in a year
+          if (new Date().getDate() === timeOfPost.getDate()) {
+            if (Math.floor(timeSincePost / 3600) === 1) {
+              time = "1 hour ago";
+            } else {
+              time = Math.floor(timeSincePost / 3600) + " hours ago";
+            }
+          }
+          return month + " " + day + " at " + time;
+        } else if (timeSincePost >= 31536000) {
+          return month + " " + day + ", " + year + " at " + time;
+        }
+      }
+
+      function formattedDateOfAns(ans) {
+        const currentDateTime = Date.now() / 1000;
+        const ansDate = new Date(ans.ans_date_time);
+        const ansDateInSecs = ansDate.getTime() / 1000;
+        const timeSincePost = currentDateTime - ansDateInSecs; // in seconds
+    
+        if (timeSincePost < 60) {
+          return Math.round(timeSincePost) + " seconds ago.";
+        } else if (timeSincePost >= 60 && timeSincePost < 3600) {
+          return Math.round(timeSincePost / 60) + " minutes ago.";
+        } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
+          return timeSincePost / 3600 + " hours ago.";
+        } else {
+          const ansYear = ans.ans_date_time.getFullYear();
+          const ansMonth = ans.ans_date_time.toLocaleString("default", {
+            month: "short",
+          });
+          const ansDay = ans.ans_date_time.getDate();
+          const ansTime = ans.ans_date_time.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          const today = new Date();
+    
+          if (
+            ansYear === today.getFullYear() &&
+            ans.ans_date_time.toDateString() === today.toDateString()
+          ) {
+            // If the answer was posted today, only show the time
+            return ansTime;
+          } else if (ansYear === today.getFullYear()) {
+            // If the answer was posted within the current year, show month, day and time
+            return ansMonth + " " + ansDay + " at " + ansTime;
+          } else {
+            // If the answer was posted before the current year, show month, day, year and time
+            return ansMonth + " " + ansDay + ", " + ansYear + " at " + ansTime;
+          }
+        }
+      }
+      function searchByInput(text) {
+        const qs = [...questions];
+        const words = text.trim().toLowerCase().split(/\s+/);
+        const results = [];
+    
+        for (const question of qs) {
+          let matchFound = false;
+          for (const word of words) {
+            if (
+              !word.startsWith("[") &&
+              !word.endsWith("]") &&
+              (question.title.toLowerCase().includes(word) ||
+                question.text.toLowerCase().includes(word))
+            ) {
+              matchFound = true;
+              break;
+            }
+          }
+          for (const word of words) {
+            if (word.startsWith("[") && word.endsWith("]")) {
+              const tagName = word.slice(1, -1);
+              if (
+                question.tags.some(
+                  (tid) =>
+                    tags
+                      .find((tag) => tag.tid === tid)
+                      .name.toLowerCase() === tagName.toLowerCase()
+                )
+              ) {
+                matchFound = true;
+                break;
+              }
+            }
+          }
+          if (matchFound) {
+            results.push(question);
+          }
+        }
+        return results;
+      }
 }
