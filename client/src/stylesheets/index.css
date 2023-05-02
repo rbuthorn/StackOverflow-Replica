@@ -1,3 +1,323 @@
 body {
+  font-family: Arial, sans-serif;
   margin: 0;
+  padding: 0;
+}
+
+/* HEADER */
+header {
+  position: fixed;
+  width: 100%;
+  background-color: #f1f1f1;
+  height: 60px;
+  border-bottom: 2px solid black;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  vertical-align: middle;
+}
+
+.search-bar {
+min-width: 20px;
+}
+
+#realSearchBar {
+max-width: 90%;
+}
+
+.invis {
+  visibility: hidden;
+}
+
+.search-bar {
+  margin: 10px;
+  vertical-align: middle;
+}
+
+.brand-logo {
+  display: inline-block;
+  font-size: 24px;
+  font-weight: bold;
+  color: black;
+  line-height: 60px;
+  text-decoration: none;
+  min-width: 235px;
+}
+
+/* CONTENT */
+
+/* LEFT SIDE BAR */
+#left-sidebar {
+  box-sizing: border-box;
+  border-style: none dotted none none;
+  width: 164px;
+  height: 100%;
+  position: fixed;
+  font-family: Arial, sans-serif;
+}
+
+.nav-links{
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar-link {
+  display: block;
+  margin: 0;
+  color: blue;
+  border: none;
+  background-color: white;
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar-link-container {
+  padding: 4px 0px;
+  margin: 4px 0px;
+}
+
+.youarehere,
+.youarehere button {
+  background: lightgrey;
+}
+
+.content {
+height: calc(100% - 60px);
+top: 60px;
+position: fixed;
+width: 100%;
+}
+
+#questionsBtn,
+#tagsBtn {
+border: none;
+background-color: inherit;
+font-size: medium;
+}
+
+/* MAIN BODY */
+
+.mainBody {
+width: calc(100% - 164px);
+position: fixed;
+left: 164px;
+height: calc(100% - 60px);
+overflow: auto;
+}
+
+.questionBtns{
+background-color: white;
+padding: 5px 5px 5px 5px;
+}
+
+#newestBtn{
+margin-left: calc(100% - 320px);
+}
+
+#homePage {
+border-bottom: 2px dotted black;
+border-spacing: 20px;
+}
+
+#firstPortionOfHomePage{
+display: flex;
+justify-content: space-between;
+margin-left: 20px;
+margin-top:20px;
+}
+
+#secondPortionOfHomePage{
+display: flex;
+margin-left : 20px;
+margin-top: 30px;
+margin-bottom: 20px;
+}
+
+#lastPortionOfAskQuestionPage{
+display: flex;
+justify-content: space-between;
+}
+
+#mandatoryFieldsText{
+color: red;
+margin-right: 30px;
+}
+
+#askQuestionBtn{
+background-color: #4169e1;
+margin: 20px 50px 20px 0px;
+padding: 5px 10px;
+color: white;
+}
+
+
+#postQuestionBtn{
+background-color: #4169e1;
+margin-top: 20px;
+margin-bottom: 20px;
+padding-top: 5px;
+padding-bottom: 5px;
+padding-right: 10px;
+padding-left: 10px;
+color: white;
+}
+
+/* maybe space the different parts of the ask question page out better */
+.askQuestionPage{
+margin-left: 75px;
+}
+
+/* fix so that boxes extend downwards not outwards */
+.askQuestionInput{
+padding: 10px 0px 10px 0px;
+box-sizing:  border-box;
+width: 90%;
+display: inline-block;
+}
+
+/* QUESTION BOX */
+
+.qstnBox{
+display: flex;
+border-bottom: 2px dotted black;
+padding: 25px 15px 15px;
+}
+
+.qstnContent {
+display: inline-block;
+}
+
+.ansViews {
+min-width: 80px;
+text-align: center;
+}
+
+.titleTags {
+margin-left: 15px;
+margin-right: 15px;
+min-width: calc(100% - 330px - 30px - 30px);
+}
+
+.qstnTime {
+min-width: 150px;
+max-width: 300px;
+padding-right: 0px;
+margin-right: 0px;
+}
+
+.ansPartOfQstnDisplay{
+color: gray;
+font-size: 16px;
+display: block;
+width: 100%;
+}
+
+.viewPartOfQstnDisplay{
+color: gray;
+font-size: 16px;
+display: block;
+width: 100%;
+}
+
+.titlePartOfQstnDisplay{
+font-size: 20px;
+color: blue;
+border: none;
+background-color: white;
+}
+
+.titlePartOfQstnDisplay:hover, 
+#askQuestionBtn:hover,
+#newestBtn:hover,
+#activeBtn:hover,
+#unansweredBtn:hover,
+.qTag:hover,
+.sidebar-link:hover {
+cursor: pointer;
+}
+
+.qTagBox {
+margin-top: 10px;
+}
+
+.qTag {
+border: 2px solid black;
+border-radius: 5px;
+padding: 5px;
+display: inline-block;
+margin-left: 5px;
+margin-right: 5px;
+background-color: #6F7378;
+color: white;
+min-width: 100px;
+text-align: center;
+}
+
+.usernamePartOfQstnDisplay{
+font-size: 16px;
+color: darkred;/*
+margin-left: 20px;*/
+}
+
+.datePartOfQstnDisplay{
+color: gray;
+font-size: 16px;
+}
+
+
+/* TAG PAGE */
+#tagPage {
+padding: 24px 16px;
+}
+
+#tagHeaderContainer {
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+align-items: center;
+margin: 0px 30px 50px 30px;
+}
+
+#askQuestionBtnInTag{
+background-color: #4169e1;
+margin: 20px 0px;
+padding: 10px 5px;
+color: white;
+}
+
+#tagContainer {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+align-content: flex-start;
+}
+
+.tagBoxContainer {
+width: 30%;
+display: flex;
+justify-content: center;
+margin: 0px 0px 40px 0px;
+}
+
+.tagBox {
+display: flex;
+justify-content: center;
+align-items: center;
+flex-direction: column;
+border: dotted;
+height: 52px;
+margin: 0px;
+width: 120px;
+text-align: center;
+}
+
+.tagLink {
+margin: 0px;
+text-decoration: underline;
+}
+
+.tagText {
+margin: 0px;
 }
