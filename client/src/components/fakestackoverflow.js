@@ -649,7 +649,7 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function TagsPage({ model, setActiveTab, setActiveTag, setActiveButton }) {
+  function TagsPage({setActiveTab, setActiveTag, setActiveButton }) {
     const currTags = [...tags];
     const handleTagClick = (event) => {
       event.preventDefault();
@@ -657,12 +657,13 @@ function FakeStackOverflowFunc() {
       setActiveTag(event.target.id);
       setActiveTab(0);
     };
+
     return (
       <div className="noDisplay" id="tagPage">
         <div id="tagHeaderContainer">
           <h3>{currTags.length} Tags</h3>
           <h3>All Tags</h3>
-          <button type="button" id="askQuestionBtnInTag">
+          <button type="button" id="askQuestionBtnInTag" onClick = {() => setActiveTab(2)}>
             {" "}
             Ask Question{" "}
           </button>
@@ -686,13 +687,11 @@ function FakeStackOverflowFunc() {
   }
 
     function displaySameTagQuestions(activeTag){
+      const currTag = getTagByTid(activeTag);
       const currQuestions = [];
       for (let i = 0; i < questions.length; i++) {
-        for (let j = 0; j < questions[i].tags.length; j++) {
-          if (questions[i].tags[j].name === activeTag) {
-            currQuestions.push(questions[i]);
-            break;
-          }
+        if (questions[i].tags.includes(currTag._id)) {
+          currQuestions.push(questions[i]);
         }
       }
       return currQuestions;
@@ -958,6 +957,16 @@ function FakeStackOverflowFunc() {
         const currTags = [...tags];
         for (let i = 0; i < currTags.length; i++) {
           if (currTags[i]._id === _id) {
+            return currTags[i];
+          }
+        }
+        return -1;
+      }
+
+      function getTagByTid(tid) {  // gets answer by the _id field in answers, not the aid field
+        const currTags = [...tags];
+        for (let i = 0; i < currTags.length; i++) {
+          if (currTags[i].tid === tid) {
             return currTags[i];
           }
         }
