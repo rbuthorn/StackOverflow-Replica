@@ -68,7 +68,7 @@ process.on('SIGINT', () => {
     });
 
 
-app.get('/allTags', async (req, res) => {
+app.get('/api/allTags', async (req, res) => {
     //Query the database for all documents in the MyModel collection
     await Tag.find()
     .then(docs => { res.send(docs);
@@ -79,7 +79,7 @@ app.get('/allTags', async (req, res) => {
         // Send the result back to the client        
     });
 
-app.get('/allQuestions', async (req, res) => {
+app.get('/api/allQuestions', async (req, res) => {
     //Query the database for all documents in the MyModel collection
     await Question.find()
     .then(docs => { res.send(docs);
@@ -90,7 +90,7 @@ app.get('/allQuestions', async (req, res) => {
         // Send the result back to the client        
 });
 
-app.get('/allAnswers', async (req, res) => {
+app.get('/api/allAnswers', async (req, res) => {
     //Query the database for all documents in the MyModel collection
     await Answer.find()
     .then(docs => { res.send(docs);

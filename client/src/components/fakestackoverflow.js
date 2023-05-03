@@ -246,7 +246,7 @@ function FakeStackOverflowFunc() {
       if (!badInput) {
         const newAid = "a" + (model.data.answers.length + 1);
         const date = new Date();
-        model.getQuestionById(activeQuestionQid).ansIds.push(newAid);
+        getQuestionById(activeQuestionQid).ansIds.push(newAid);
         model.data.answers.push({
           aid: newAid,
           text: tempText,
@@ -296,7 +296,6 @@ function FakeStackOverflowFunc() {
   }
 
   function QuestionsPage({
-    model,
     setActiveTab,
     setActiveButton,
     currQuestions,
@@ -325,7 +324,7 @@ function FakeStackOverflowFunc() {
             </button>
           </div>
           <div id="secondPortionOfHomePage">
-            <span id="numQuestionsPart">{questions.length} questions</span>
+            <span id="numQuestionsPart">{currQuestions.length} questions</span>
             <button
               type="button"
               className="questionBtns"
@@ -376,8 +375,8 @@ function FakeStackOverflowFunc() {
                     >
                       {question.title}
                     </button>
-                    <div className="qTagBox">
-                      {question.tags.map((tid) => (
+                    {/* <div className="qTagBox">  figure out how to display names of tags instead of _ids
+                      {questions.tags.map(tid => (
                         <div
                           key={tid}
                           id={tid}
@@ -387,7 +386,7 @@ function FakeStackOverflowFunc() {
                           {tid} //change to name later 
                         </div>
                       ))}
-                    </div>
+                    </div> */}
                   </div>
                   <div className="qstnTime qstnContent">
                     <span className="usernamePartOfQstnDisplay">
@@ -482,14 +481,14 @@ function FakeStackOverflowFunc() {
           tagsArr = temp;
         }
         for (let i = 0; i < tagsArr.length; i++) {
-          if (model.getTidByName(tagsArr[i]) !== -1) {
+          if (getTidByName(tagsArr[i]) !== -1) {
             tagsArr[i] = model.getTidByName(tagsArr[i]);
           } else {
             const newTagId = "t" + (model.data.tags.length + 1);
             const newTagName = tagsArr[i];
             const newTag = { tid: newTagId, name: newTagName };
             model.insertTag(newTag);
-            tagsArr[i] = model.getTidByName(tagsArr[i]);
+            tagsArr[i] = getTidByName(tagsArr[i]);
           }
         }
         const emptyAnsArr = [];
@@ -583,12 +582,13 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function AnswersPage({ model, setActiveTab, activeQuestionQid }) {
+  function AnswersPage({setActiveTab, activeQuestionQid }) {
     const question = getQuestionById(activeQuestionQid);
-    let answers = [];
-    for (let i = 0; i < question.ansIds.length; i++)
-      answers.push(getAnswerById(question.ansIds[i]));
-    model.sortAnsByDate(answers);
+    let currAnswers = [];
+    for (let i = 0; i < question.answers.length; i++){
+      currAnswers.push(getAnswerBy_Id(question.answers[i]));
+    }
+    sortAnsByDate(currAnswers);
     function handleAnsQues(event) {
       event.preventDefault();
       setActiveTab(4);
@@ -598,7 +598,7 @@ function FakeStackOverflowFunc() {
       <div id="answerPage">
         <div className="aPageHeader">
           <div className="aPageHeader-1">
-            <h3 id="numAnswers">{question.ansIds.length} answers</h3>
+            <h3 id="numAnswers">{question.answers.length} answers</h3>
             <h3 id="qTitle">{question.title}</h3>
             <button
               type="button"
@@ -618,7 +618,7 @@ function FakeStackOverflowFunc() {
               dangerouslySetInnerHTML={{ __html: question.text }}
             ></div>
             <div className="qAskedBy">
-              <span id="userAnsrPage">{question.askedBy}</span>
+              <span id="userAnsrPage">{question.asked_by}</span>
               <span id="dateAnsrPage">
                 {formattedDateOfQstn(question)}
               </span>
@@ -626,7 +626,7 @@ function FakeStackOverflowFunc() {
           </div>
         </div>
         <div id="aPageAnswers">
-          {answers.map((answer, index) => (
+          {currAnswers.map((answer, index) => (
             <div className="aPageAnswer" key={index}>
               <div
                 id="qText"
@@ -634,7 +634,7 @@ function FakeStackOverflowFunc() {
               ></div>
               <p className="aPageText">{answer.text}</p>
               <div className="aPageAskedBy">
-                <span className="userAnsrPage">{answer.ansBy}</span>
+                <span className="userAnsrPage">{answer.ans_by}</span>
                 <span className="dateAnsrPage">
                   {formattedDateOfAns(answer)}
                 </span>
@@ -675,7 +675,7 @@ function FakeStackOverflowFunc() {
                   {tag.name}
                 </a>
                 <p className="tagText">
-                  {model.getNumQuestionsByTid(tag.tid)} questions
+                  {getNumQuestionsByTid(tag._id)} questions
                 </p>
               </div>
             </div>
@@ -753,10 +753,9 @@ function FakeStackOverflowFunc() {
     function getMostRecentAnsDate(qid) {
       const qstn = getQuestionById(qid);
       const qstnAnswers = qstn.answers;
-      const ansIds = qstnAnswers.map(answer => answer.id);
       let mostRecentAnsDate = null;
-      for (let i = 0; i < ansIds.length; i++) {
-        const ansDate = getAnswerById(ansIds[i]).ansDate;
+      for (let i = 0; i < qstnAnswers.length; i++) {
+        const ansDate = getAnswerBy_Id(qstnAnswers[i]).ans_date_time;
         if (!mostRecentAnsDate || ansDate > mostRecentAnsDate) {
           mostRecentAnsDate = ansDate;
         }
@@ -785,18 +784,8 @@ function FakeStackOverflowFunc() {
       return -1;
     }
 
-    function getAnswerById(id) {
-      const currAnswers = [...answers];
-      for (let i = 0; i < currAnswers.length; i++) {
-        if (currAnswers[i].aid === id) {
-          return currAnswers[i];
-        }
-      }
-      return -1;
-    }
-
     function getAllTags(){
-      axios.get("http://localhost:8000/allTags")
+      axios.get("http://localhost:8000/api/allTags")
       .then(function(res) {
         setTags(res.data)
       })
@@ -806,7 +795,7 @@ function FakeStackOverflowFunc() {
     }
   
       function getAllQuestions(){
-        axios.get("http://localhost:8000/allQuestions")
+        axios.get("http://localhost:8000/api/allQuestions")
         .then(function(res) {
           setQuestions(res.data);
         })
@@ -816,7 +805,7 @@ function FakeStackOverflowFunc() {
       }
   
       function getAllAnswers(){
-        axios.get("http://localhost:8000/allAnswers")
+        axios.get("http://localhost:8000/api/allAnswers")
         .then(res => {
           setAnswers(res.data);
         })
@@ -874,7 +863,7 @@ function FakeStackOverflowFunc() {
         } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
           return timeSincePost / 3600 + " hours ago.";
         } else {
-          const ansYear = ans.ans_date_time.getFullYear();
+          const ansYear = new Date(ans.ans_date_time).getFullYear();
           const ansMonth = ans.ans_date_time.toLocaleString("default", {
             month: "short",
           });
@@ -923,9 +912,9 @@ function FakeStackOverflowFunc() {
               const tagName = word.slice(1, -1);
               if (
                 question.tags.some(
-                  (tid) =>
+                  (_id) =>
                     tags
-                      .find((tag) => tag.tid === tid)
+                      .find((tag) => tag._id === _id)
                       .name.toLowerCase() === tagName.toLowerCase()
                 )
               ) {
@@ -939,5 +928,49 @@ function FakeStackOverflowFunc() {
           }
         }
         return results;
+      }
+
+      function getTidByName(name) {
+        const ts = [...tags];
+        for (let i = 0; i < ts.length; i++) {
+          if (ts[i].name === name) {
+            return ts[i].tid;
+          }
+        }
+        return -1;
+      }
+
+      function sortAnsByDate(ansArr) {
+        ansArr.sort((a, b) => new Date(b.ansDate) - new Date(a.ansDate));
+      }
+
+      function getAnswerBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+        const currAnswers = [...answers];
+        for (let i = 0; i < currAnswers.length; i++) {
+          if (currAnswers[i]._id === _id) {
+            return currAnswers[i];
+          }
+        }
+        return -1;
+      }
+
+      function getTagBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+        const currTags = [...tags];
+        for (let i = 0; i < currTags.length; i++) {
+          if (currTags[i]._id === _id) {
+            return currTags[i];
+          }
+        }
+        return -1;
+      }
+
+      function getNumQuestionsByTid(t_id) {
+        let count = 0;
+        for (let i = 0; i < questions.length; i++) {
+          if (questions[i].tags.includes(t_id)) {
+            count++;
+          }
+        }
+        return count++;
       }
 }

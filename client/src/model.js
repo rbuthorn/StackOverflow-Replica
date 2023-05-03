@@ -77,30 +77,6 @@ export default class Model {
       };
     }
   
-    sortAnsByDate(ansArr) {
-      ansArr.sort((a, b) => new Date(b.ansDate) - new Date(a.ansDate));
-    }
-  
-    getNumQuestionsByTid(id) {
-      let count = 0;
-      for (let i = 0; i < this.data.questions.length; i++) {
-        if (this.data.questions[i].tagIds.includes(id)) {
-          count++;
-        }
-      }
-      return count++;
-    }
-  
-    getTidByName(n) {
-      const ts = this.getTags();
-      for (let i = 0; i < ts.length; i++) {
-        if (ts[i].name === n) {
-          return ts[i].tid;
-        }
-      }
-      return -1;
-    }
-  
     getNameByTid(id) {
       const ts = this.getTags();
       for (let i = 0; i < ts.length; i++) {
