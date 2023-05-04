@@ -7,10 +7,13 @@ const rootDir = path.dirname(__dirname);
 const serverPort = 8000;
 var cors = require('cors')
 const app = express();
+const bodyParser = require("body-parser");
 
 app.use(express.static(rootDir + "/client/public"));
 
 app.use(cors());
+
+app.use(bodyParser.json());
 
 app.listen(serverPort, 'localhost', () => {
     console.log("listening on port 8000");
@@ -27,35 +30,6 @@ mongoose.connect(mongoDB);
 let db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'mongoDB connection error:'));
-
-function tagCreate(name) {
-    let tag = new Tag({ name: name });
-    return tag.save();
-}
-  
-function answerCreate(text, ans_by, ans_date_time) {
-    answerdetail = {text:text};
-    if (ans_by != false) answerdetail.ans_by = ans_by;
-    if (ans_date_time != false) answerdetail.ans_date_time = ans_date_time;
-
-    let answer = new Answer(answerdetail);
-    return answer.save();
-}
-  
-function questionCreate(title, text, tags, answers, asked_by, ask_date_time, views) {
-    qstndetail = {
-        title: title,
-        text: text,
-        tags: tags,
-        asked_by: asked_by
-    }
-    if (answers != false) qstndetail.answers = answers;
-    if (ask_date_time != false) qstndetail.ask_date_time = ask_date_time;
-    if (views != false) qstndetail.views = views;
-
-    let qstn = new Question(qstndetail);
-    return qstn.save();
-}
 
 process.on('SIGINT', () => {
     if(db) {
@@ -100,3 +74,12 @@ app.get('/api/allAnswers', async (req, res) => {
         });
         // Send the result back to the client        
     });
+
+app.post('/api/addTag', async (req, res) => {
+    const {tid, name} = req.body;
+    const newTag = new Tag({tid: tid, name: name});
+
+    await newTag.save()
+    .then(() => {res.send("tag saved successfully")})
+    .catch((error) => {res.send(error)})
+})

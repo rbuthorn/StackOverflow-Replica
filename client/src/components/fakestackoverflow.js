@@ -18,9 +18,6 @@ function FakeStackOverflowFunc() {
     getAllTags();
   }, []);
 
-  //AFTER THAT: write code to create(and query?) questions and save them to the model -- in this code make sure to update questions using setQuestions()
-
-  //THEN: check the website to make sure the code works, if it doesn't --try deleting all references to model.data.questions and replacing with db queries
   const model = new Model();
   return <Content model={model} />;
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
@@ -405,18 +402,19 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function AskQuestionPage({ model, setActiveTab }) {
+  function AskQuestionPage({ setActiveTab }) {
     const [title, setTitle] = useState("");
     const [text, setText] = useState("");
-    const [tags, setTags] = useState("");
+    const [newQuestionTags, setNewQuestionTags] = useState("");
     const [username, setUsername] = useState("");
     const [titleError, setTitleError] = useState(false);
     const [textError, setTextError] = useState(false);
     const [tagsError, setTagsError] = useState(false);
     const [usernameError, setUsernameError] = useState(false);
     const [hyperlinkError, setHyperlinkError] = useState(false);
-
-    const handleSubmit = (event) => {
+    let tagCount = tags.length;
+    
+    const handleSubmit = async (event) => {
       event.preventDefault();
 
       setTitleError(false);
@@ -461,12 +459,12 @@ function FakeStackOverflowFunc() {
         badInput = true;
       }
 
-      if (tags === "" || tags.length === 0 || tags.length > 5) {
+      if (newQuestionTags === "" || newQuestionTags.length === 0 || numWords(newQuestionTags) > 5) {
         badInput = true;
         setTagsError(true);
       } else {
-        for (let i = 0; i < tags.length; i++) {
-          if (tags[i].length > 10) {
+        for (let i = 0; i < newQuestionTags.length; i++) {
+          if (newQuestionTags[i].length > 10) {
             badInput = true;
             setTagsError(true);
           }
@@ -475,34 +473,29 @@ function FakeStackOverflowFunc() {
 
       if (!badInput) {
         // turn tags into tag ids
-        let tagsArr = tags;
-        if (!Array.isArray(tagsArr)) {
-          let temp = [tagsArr];
-          tagsArr = temp;
+        let incomingTags = newQuestionTags.split(/\s/);
+        let tagNames = tags.map(tag => tag.name)
+        const newTags = incomingTags.filter(name => !tagNames.includes(name));
+
+        for(let i = 0; i < newTags.length; i++){
+          await addTag(newTags[i], tagCount);
+          tagCount +=1;
         }
-        for (let i = 0; i < tagsArr.length; i++) {
-          if (getTidByName(tagsArr[i]) !== -1) {
-            tagsArr[i] = model.getTidByName(tagsArr[i]);
-          } else {
-            const newTagId = "t" + (model.data.tags.length + 1);
-            const newTagName = tagsArr[i];
-            const newTag = { tid: newTagId, name: newTagName };
-            model.insertTag(newTag);
-            tagsArr[i] = getTidByName(tagsArr[i]);
-          }
-        }
-        const emptyAnsArr = [];
-        const date = new Date();
-        model.data.questions.push({
-          qid: "q" + (questions.length + 1),
-          title: title,
-          text: tempText,
-          tagIds: tagsArr,
-          askedBy: username,
-          askDate: date,
-          ansIds: emptyAnsArr,
-          views: 0,
-        });
+        
+        console.log(tags);
+
+        // const emptyAnsArr = [];
+        // const date = new Date();
+        // model.data.questions.push({
+        //   qid: "q" + (questions.length + 1),
+        //   title: title,
+        //   text: tempText,
+        //   tagIds: tagsArr,
+        //   askedBy: username,
+        //   askDate: date,
+        //   ansIds: emptyAnsArr,
+        //   views: 0,
+        // });
         setActiveTab(0);
       }
     };
@@ -557,8 +550,8 @@ function FakeStackOverflowFunc() {
             className="askQuestionInput"
             id="tagsInput"
             type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
+            value={newQuestionTags}
+            onChange={(e) => setNewQuestionTags(e.target.value)}
           />
           {tagsError && <p style={{ color: "red" }}>Invalid tag input</p>}
         </div>
@@ -783,9 +776,9 @@ function FakeStackOverflowFunc() {
       return -1;
     }
 
-    function getAllTags(){
-      axios.get("http://localhost:8000/api/allTags")
-      .then(function(res) {
+    async function getAllTags(){
+      await axios.get("http://localhost:8000/api/allTags")
+      .then(async function(res) {
         setTags(res.data)
       })
         .catch(err=>{
@@ -981,5 +974,18 @@ function FakeStackOverflowFunc() {
           }
         }
         return count++;
+      }
+
+      function numWords(str){
+        return str.split(/\s+/).length;
+      }
+      
+      async function addTag(tagName, tagCount){
+        let newTagId = "t" + (tagCount + 1);
+        
+        await axios.post("http://localhost:8000/api/addTag", {tid: newTagId, name: tagName})
+        .then(response => {console.log(response)})
+        .catch(error => {console.log(error)})
+        await getAllTags();
       }
 }
