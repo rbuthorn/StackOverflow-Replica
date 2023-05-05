@@ -106,3 +106,26 @@ app.post('/api/addQuestion', async (req, res) => {
     .then(() => {res.send("question saved successfully")})
     .catch((error) => {res.send(error)})
 });
+
+app.post('/api/addAnswer', async (req, res) => {
+    const {aid, text, ans_by, ask_date_time} = req.body;
+    const newAnswer = new Answer({
+        aid: aid, 
+        text: text, 
+        ans_by: ans_by, 
+        ask_date_time: ask_date_time, 
+      });
+
+    await newAnswer.save()
+    .then(() => {res.send("answer saved successfully")})
+    .catch((error) => {res.send(error)})
+});
+
+app.post("/api/addAnswerToExistingQuestion", async (req, res) => {
+    const {activeQid, newAns_Id} = req.body;
+    await Question.findOneAndUpdate(
+        {qid: activeQid},
+        {$push:{answers: newAns_Id}},
+        {new: true})
+    });
+
