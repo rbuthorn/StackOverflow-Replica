@@ -118,7 +118,6 @@ function FakeStackOverflowFunc() {
         case 1:
           return (
             <TagsPage
-              model={model}
               setActiveTab={setActiveTab}
               setActiveTag={setActiveTag}
               setActiveButton={setActiveButton}
@@ -481,21 +480,26 @@ function FakeStackOverflowFunc() {
           await addTag(newTags[i], tagCount);
           tagCount +=1;
         }
+        let allTags = await getAllTags();
         
-        console.log(tags);
+        let date = new Date();
+        date = date.toLocaleDateString();
 
-        // const emptyAnsArr = [];
-        // const date = new Date();
-        // model.data.questions.push({
-        //   qid: "q" + (questions.length + 1),
-        //   title: title,
-        //   text: tempText,
-        //   tagIds: tagsArr,
-        //   askedBy: username,
-        //   askDate: date,
-        //   ansIds: emptyAnsArr,
-        //   views: 0,
-        // });
+        const qstnTags = convertTagNamesTo_Ids(allTags, incomingTags);
+
+        let qstn = {  
+        qid: "q" + (questions.length + 1),
+        title: title,
+        text: tempText,
+        tags: qstnTags,
+        answers: [],
+        asked_by: username,
+        ask_date_time: date,
+        views: 0,
+        };
+
+        addQuestion(qstn);
+        await getAllQuestions();
         setActiveTab(0);
       }
     };
@@ -669,7 +673,7 @@ function FakeStackOverflowFunc() {
                   {tag.name}
                 </a>
                 <p className="tagText">
-                  {getNumQuestionsByTid(tag._id)} questions
+                  {getNumQuestionsByT_id(tag._id)} questions
                 </p>
               </div>
             </div>
@@ -700,12 +704,12 @@ function FakeStackOverflowFunc() {
         }
         let i = left;
         let j = right;
-        const pivot = sortedQstns[Math.floor((left + right) / 2)].askDate;
+        const pivot = sortedQstns[Math.floor((left + right) / 2)].ask_date_time;
         while (i <= j) {
-          while (sortedQstns[i].askDate > pivot) {
+          while (sortedQstns[i].ask_date_time > pivot) {
             i++;
           }
-          while (sortedQstns[j].askDate < pivot) {
+          while (sortedQstns[j].ask_date_time < pivot) {
             j--;
           }
           if (i <= j) {
@@ -777,33 +781,42 @@ function FakeStackOverflowFunc() {
     }
 
     async function getAllTags(){
+      let tagData;
       await axios.get("http://localhost:8000/api/allTags")
       .then(async function(res) {
-        setTags(res.data)
-      })
+        setTags(res.data);
+        tagData = res.data
+        })
         .catch(err=>{
           console.log(err);
         });
+        return tagData;
     }
   
-      function getAllQuestions(){
-        axios.get("http://localhost:8000/api/allQuestions")
-        .then(function(res) {
+      async function getAllQuestions(){
+        let questionData;
+        await axios.get("http://localhost:8000/api/allQuestions")
+        .then(async function(res) {
           setQuestions(res.data);
-        })
+          questionData = res.data
+          })
           .catch(err=>{
             console.log(err);
           });
+          return questionData;
       }
   
-      function getAllAnswers(){
-        axios.get("http://localhost:8000/api/allAnswers")
-        .then(res => {
+      async function getAllAnswers(){
+        let answerData;
+        await axios.get("http://localhost:8000/api/allAnswers")
+        .then(async function(res) {
           setAnswers(res.data);
-        })
+          answerData = res.data
+          })
           .catch(err=>{
             console.log(err);
           });
+          return answerData;
       }
 
       function formattedDateOfQstn(qstn) {
@@ -956,6 +969,15 @@ function FakeStackOverflowFunc() {
         return -1;
       }
 
+      function getTag_IdByName(allTags, tagName){
+        for(const tag of allTags){
+          if(tag.name === tagName){
+            return tag._id;
+          }
+        }
+        return -1;
+      }
+
       function getTagByTid(tid) {  // gets answer by the _id field in answers, not the aid field
         const currTags = [...tags];
         for (let i = 0; i < currTags.length; i++) {
@@ -966,7 +988,7 @@ function FakeStackOverflowFunc() {
         return -1;
       }
 
-      function getNumQuestionsByTid(t_id) {
+      function getNumQuestionsByT_id(t_id) {
         let count = 0;
         for (let i = 0; i < questions.length; i++) {
           if (questions[i].tags.includes(t_id)) {
@@ -979,6 +1001,14 @@ function FakeStackOverflowFunc() {
       function numWords(str){
         return str.split(/\s+/).length;
       }
+
+      function convertTagNamesTo_Ids(allTags, tagNames){
+        const newTags = [];
+        for (let i = 0; i < tagNames.length; i++){
+          newTags[i] = getTag_IdByName(allTags, tagNames[i]);
+        }
+        return newTags;
+      }
       
       async function addTag(tagName, tagCount){
         let newTagId = "t" + (tagCount + 1);
@@ -986,6 +1016,21 @@ function FakeStackOverflowFunc() {
         await axios.post("http://localhost:8000/api/addTag", {tid: newTagId, name: tagName})
         .then(response => {console.log(response)})
         .catch(error => {console.log(error)})
-        await getAllTags();
+      }
+
+      async function addQuestion(q){
+        await axios.post("http://localhost:8000/api/addQuestion",
+         {qid: q.qid, 
+          title: q.title, 
+          text: q.text, 
+          tags: q.tags, 
+          answers: q.answers, 
+          asked_by: q.asked_by, 
+          ask_date_time: q.ask_date_time, 
+          views: q.views
+        })
+        .then(response => {console.log(response)})
+        .catch(error => {console.log(error)})
+        await getAllQuestions();
       }
 }
