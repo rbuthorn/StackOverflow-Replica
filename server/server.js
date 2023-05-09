@@ -8,7 +8,7 @@ const serverPort = 8000;
 var cors = require('cors')
 const app = express();
 const bodyParser = require("body-parser");
-
+const { ObjectId } = require('mongodb');
 app.use(express.static(rootDir + "/client/public"));
 
 app.use(cors());
@@ -82,4 +82,50 @@ app.post('/api/addTag', async (req, res) => {
     await newTag.save()
     .then(() => {res.send("tag saved successfully")})
     .catch((error) => {res.send(error)})
-})
+});
+
+app.post('/api/addQuestion', async (req, res) => {
+    const {qid, title, text, tags, answers, asked_by, ask_date_time, views} = req.body;
+    const qstnTags = [];
+    for(let i = 0; i < tags.length; i++){
+        let objId = new ObjectId(tags[i]);
+        qstnTags.push(objId);
+    }
+    const newQuestion = new Question({
+        qid: qid, 
+        title:title, 
+        text: text, 
+        tags: qstnTags,
+        answers: answers, 
+        asked_by: asked_by, 
+        ask_date_time: ask_date_time, 
+        views: views
+      });
+
+    await newQuestion.save()
+    .then(() => {res.send("question saved successfully")})
+    .catch((error) => {res.send(error)})
+});
+
+app.post('/api/addAnswer', async (req, res) => {
+    const {aid, text, ans_by, ask_date_time} = req.body;
+    const newAnswer = new Answer({
+        aid: aid, 
+        text: text, 
+        ans_by: ans_by, 
+        ask_date_time: ask_date_time, 
+      });
+
+    await newAnswer.save()
+    .then(() => {res.send("answer saved successfully")})
+    .catch((error) => {res.send(error)})
+});
+
+app.post("/api/addAnswerToExistingQuestion", async (req, res) => {
+    const {activeQid, newAns_Id} = req.body;
+    await Question.findOneAndUpdate(
+        {qid: activeQid},
+        {$push:{answers: newAns_Id}},
+        {new: true})
+    });
+

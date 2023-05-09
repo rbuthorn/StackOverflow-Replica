@@ -1,4 +1,3 @@
-import Model from "../model.js";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -18,8 +17,7 @@ function FakeStackOverflowFunc() {
     getAllTags();
   }, []);
 
-  const model = new Model();
-  return <Content model={model} />;
+  return <Content />;
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
     const [searchBarInput, setSearchBarInput] = useState("");
 
@@ -71,13 +69,15 @@ function FakeStackOverflowFunc() {
       </header>
     );
   }
-  function Content({ model }) {
-    const [activeTab, setActiveTab] = useState(0);
+  function Content() {
+    const [activeTab, setActiveTab] = useState(5);
     const tabs = ["Questions", "Tags"];
     const [activeQuestionQid, setActiveQuestionQid] = useState(null);
     const [activeButton, setActiveButton] = useState(0);
     const [activeTag, setActiveTag] = useState(null);
     const [currentSearch, setCurrentSearch] = useState(null);
+    const [activeWelcomeButton, setActiveWelcomeButton] = useState(0);
+
 
     const renderContent = () => {
       var currQuestions = [];
@@ -106,7 +106,6 @@ function FakeStackOverflowFunc() {
           }
           return (
             <QuestionsPage
-              model={model}
               setActiveTab={setActiveTab}
               setActiveButton={setActiveButton}
               currQuestions={currQuestions}
@@ -118,7 +117,6 @@ function FakeStackOverflowFunc() {
         case 1:
           return (
             <TagsPage
-              model={model}
               setActiveTab={setActiveTab}
               setActiveTag={setActiveTag}
               setActiveButton={setActiveButton}
@@ -126,12 +124,11 @@ function FakeStackOverflowFunc() {
           );
         // ask question page
         case 2:
-          return <AskQuestionPage model={model} setActiveTab={setActiveTab} />;
+          return <AskQuestionPage setActiveTab={setActiveTab} />;
         // answers page
         case 3:
           return (
             <AnswersPage
-              model={model}
               setActiveTab={setActiveTab}
               setActiveButton={setActiveButton}
               currQuestions={currQuestions}
@@ -143,14 +140,39 @@ function FakeStackOverflowFunc() {
         case 4:
           return (
             <AnsQuestionPage
-              model={model}
               setActiveTab={setActiveTab}
               setActiveQuestionQid={setActiveQuestionQid}
               activeQuestionQid={activeQuestionQid}
             />
           );
+          //first page when entering application-welcome page
+        case 5:
+          return (
+            <WelcomePage
+              setActiveTab={setActiveTab}
+            />
+          );
+
+        case 6:
+          return (
+            <RegisterPage
+              setActiveTab={setActiveTab}
+            />
+          );
+
+        case 7:
+          return (
+            <LoginPage
+              setActiveTab={setActiveTab}
+            />
+          );
+
         default:
-          return <QuestionsPage model={model} setActiveTab={setActiveTab} />;
+          return (
+            <QuestionsPage
+              setActiveTab={setActiveTab}
+            />
+          );
       }
     };
     return (
@@ -190,8 +212,29 @@ function FakeStackOverflowFunc() {
     );
   }
 
+  function WelcomePage({setActiveTab}){
+    //change the onclick js to match the actual direction of pages later
+    return(
+      <div className="welcomeContainer">
+        <div className="welcomeWindow">
+          <div className="welcomeButton-container">
+            <button className="welcomeButton" onClick={() => setActiveTab(0)}>register as a new user</button>
+            <button className="welcomeButton" onClick={() => setActiveTab(0)}>login as existing user</button>
+            <button className="welcomeButton" onClick={() => setActiveTab(0)}>continue as guest</button>
+          </div>
+        </div>
+      </div>
+    )};
+
+  function RegisterPage({setActiveTab}){
+    
+  }
+
+  function LoginPage({setActiveTab}){
+    
+  }
+
   function AnsQuestionPage({
-    model,
     setActiveTab,
     setActiveQuestionQid,
     activeQuestionQid,
@@ -202,7 +245,7 @@ function FakeStackOverflowFunc() {
     const [usernameError, setUsernameError] = useState(false);
     const [hyperlinkError, setHyperlinkError] = useState(false);
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
       event.preventDefault();
 
       setTextError(false);
@@ -241,15 +284,22 @@ function FakeStackOverflowFunc() {
       }
 
       if (!badInput) {
-        const newAid = "a" + (model.data.answers.length + 1);
-        const date = new Date();
-        getQuestionById(activeQuestionQid).ansIds.push(newAid);
-        model.data.answers.push({
+        const newAid = "a" + (answers.length + 1);
+        let date = new Date(Date.now());
+        const newAns = {
           aid: newAid,
           text: tempText,
-          ansBy: username,
-          ansDate: date,
-        });
+          ans_by: username,
+          ans_date_time: date,
+        };
+        await addAnswer(newAns);  //add new answer object to database
+        let allAnswers = await getAllAnswers();
+
+        //add new answer object to associatd question's answers field
+        const newAns_Id = convertAidtoAns_Id(allAnswers, newAid);
+        await addAnswerToExistingQuestion(activeQuestionQid, newAns_Id);
+        await getAllQuestions();
+
         setActiveTab(3);
       }
     };
@@ -481,21 +531,24 @@ function FakeStackOverflowFunc() {
           await addTag(newTags[i], tagCount);
           tagCount +=1;
         }
+        let allTags = await getAllTags();
         
-        console.log(tags);
+        let date = new Date(Date.now());
+        const qstnTags = convertTagNamesTo_Ids(allTags, incomingTags);
 
-        // const emptyAnsArr = [];
-        // const date = new Date();
-        // model.data.questions.push({
-        //   qid: "q" + (questions.length + 1),
-        //   title: title,
-        //   text: tempText,
-        //   tagIds: tagsArr,
-        //   askedBy: username,
-        //   askDate: date,
-        //   ansIds: emptyAnsArr,
-        //   views: 0,
-        // });
+        let qstn = {  
+        qid: "q" + (questions.length + 1),
+        title: title,
+        text: tempText,
+        tags: qstnTags,
+        answers: [],
+        asked_by: username,
+        ask_date_time: date,
+        views: 0,
+        };
+
+        addQuestion(qstn);
+        await getAllQuestions();
         setActiveTab(0);
       }
     };
@@ -669,7 +722,7 @@ function FakeStackOverflowFunc() {
                   {tag.name}
                 </a>
                 <p className="tagText">
-                  {getNumQuestionsByTid(tag._id)} questions
+                  {getNumQuestionsByT_id(tag._id)} questions
                 </p>
               </div>
             </div>
@@ -679,313 +732,385 @@ function FakeStackOverflowFunc() {
     );
   }
 
-    function displaySameTagQuestions(activeTag){
-      const currTag = getTagByTid(activeTag);
-      const currQuestions = [];
-      for (let i = 0; i < questions.length; i++) {
-        if (questions[i].tags.includes(currTag._id)) {
-          currQuestions.push(questions[i]);
-        }
+  function displaySameTagQuestions(activeTag){
+    const currTag = getTagByTid(activeTag);
+    const currQuestions = [];
+    for (let i = 0; i < questions.length; i++) {
+      if (questions[i].tags.includes(currTag._id)) {
+        currQuestions.push(questions[i]);
       }
-      return currQuestions;
     }
+    return currQuestions;
+  }
 
-    function sortNewest() {
-      let sortedQstns = [...questions];
-      const stack = [[0, sortedQstns.length - 1]];
-      while (stack.length > 0) {
-        const [left, right] = stack.pop();
-        if (left >= right) {
-          continue;
+  function sortNewest() {
+    let sortedQstns = [...questions];
+    const stack = [[0, sortedQstns.length - 1]];
+    while (stack.length > 0) {
+      const [left, right] = stack.pop();
+      if (left >= right) {
+        continue;
+      }
+      let i = left;
+      let j = right;
+      const pivot = sortedQstns[Math.floor((left + right) / 2)].ask_date_time;
+      while (i <= j) {
+        while (sortedQstns[i].ask_date_time > pivot) {
+          i++;
         }
-        let i = left;
-        let j = right;
-        const pivot = sortedQstns[Math.floor((left + right) / 2)].askDate;
-        while (i <= j) {
-          while (sortedQstns[i].askDate > pivot) {
-            i++;
-          }
-          while (sortedQstns[j].askDate < pivot) {
-            j--;
-          }
-          if (i <= j) {
-            const temp = sortedQstns[i];
-            sortedQstns[i] = sortedQstns[j];
-            sortedQstns[j] = temp;
-            i++;
-            j--;
-          }
+        while (sortedQstns[j].ask_date_time < pivot) {
+          j--;
         }
-        if (left < j) {
-          stack.push([left, j]);
-        }
-        if (i < right) {
-          stack.push([i, right]);
+        if (i <= j) {
+          const temp = sortedQstns[i];
+          sortedQstns[i] = sortedQstns[j];
+          sortedQstns[j] = temp;
+          i++;
+          j--;
         }
       }
-      return sortedQstns;
-    }
-  
-    function displayActive() {
-      const arrOfActiveQstns = [];
-      const currQuestions = [...questions];
-      for (let i = 0; i < currQuestions.length; i++) {
-        const mostRecentAnsDate = getMostRecentAnsDate(currQuestions[i].qid);
-        if (mostRecentAnsDate) {
-          arrOfActiveQstns.push({
-            question: currQuestions[i],
-            mostRecentAnsDate: mostRecentAnsDate,
-          });
-        }
+      if (left < j) {
+        stack.push([left, j]);
       }
-      arrOfActiveQstns.sort((a, b) => b.mostRecentAnsDate - a.mostRecentAnsDate);
-      return arrOfActiveQstns.map((item) => item.question);
-    }
-  
-    function getMostRecentAnsDate(qid) {
-      const qstn = getQuestionById(qid);
-      const qstnAnswers = qstn.answers;
-      let mostRecentAnsDate = null;
-      for (let i = 0; i < qstnAnswers.length; i++) {
-        const ansDate = getAnswerBy_Id(qstnAnswers[i]).ans_date_time;
-        if (!mostRecentAnsDate || ansDate > mostRecentAnsDate) {
-          mostRecentAnsDate = ansDate;
-        }
+      if (i < right) {
+        stack.push([i, right]);
       }
-      return mostRecentAnsDate;
     }
-  
-    function displayUnanswered() {
-      const currQuestions = [...questions];
-      const arrOfUnansweredQstns = [];
-      for (let i = 0; i < currQuestions.length; i++) {
-        if (currQuestions[i].answers.length === 0) {
-          arrOfUnansweredQstns.push(currQuestions[i]);
-        }
-      }
-      return arrOfUnansweredQstns;
-    }
+    return sortedQstns;
+  }
 
-    function getQuestionById(qid) {
-      const currQuestions = [...questions];
-      for (let i = 0; i < currQuestions.length; i++) {
-        if (currQuestions[i].qid === qid) {
-          return currQuestions[i];
-        }
+  function displayActive() {
+    const arrOfActiveQstns = [];
+    const currQuestions = [...questions];
+    for (let i = 0; i < currQuestions.length; i++) {
+      const mostRecentAnsDate = getMostRecentAnsDate(currQuestions[i].qid);
+      if (mostRecentAnsDate) {
+        arrOfActiveQstns.push({
+          question: currQuestions[i],
+          mostRecentAnsDate: mostRecentAnsDate,
+        });
       }
-      return -1;
     }
+    arrOfActiveQstns.sort((a, b) => b.mostRecentAnsDate - a.mostRecentAnsDate);
+    return arrOfActiveQstns.map((item) => item.question);
+  }
 
-    async function getAllTags(){
-      await axios.get("http://localhost:8000/api/allTags")
-      .then(async function(res) {
-        setTags(res.data)
+  function getMostRecentAnsDate(qid) {
+    const qstn = getQuestionById(qid);
+    const qstnAnswers = qstn.answers;
+    let mostRecentAnsDate = null;
+    for (let i = 0; i < qstnAnswers.length; i++) {
+      const ansDate = getAnswerBy_Id(qstnAnswers[i]).ans_date_time;
+      if (!mostRecentAnsDate || ansDate > mostRecentAnsDate) {
+        mostRecentAnsDate = ansDate;
+      }
+    }
+    return mostRecentAnsDate;
+  }
+
+  function displayUnanswered() {
+    const currQuestions = [...questions];
+    const arrOfUnansweredQstns = [];
+    for (let i = 0; i < currQuestions.length; i++) {
+      if (currQuestions[i].answers.length === 0) {
+        arrOfUnansweredQstns.push(currQuestions[i]);
+      }
+    }
+    arrOfUnansweredQstns.sort((a, b) => b.ask_date_time - a.ask_date_time);
+    return arrOfUnansweredQstns;
+  }
+
+  function getQuestionById(qid) {
+    const currQuestions = [...questions];
+    for (let i = 0; i < currQuestions.length; i++) {
+      if (currQuestions[i].qid === qid) {
+        return currQuestions[i];
+      }
+    }
+    return -1;
+  }
+
+  async function getAllTags(){
+    let tagData;
+    await axios.get("http://localhost:8000/api/allTags")
+    .then(async function(res) {
+      setTags(res.data);
+      tagData = res.data
       })
-        .catch(err=>{
-          console.log(err);
-        });
-    }
-  
-      function getAllQuestions(){
-        axios.get("http://localhost:8000/api/allQuestions")
-        .then(function(res) {
-          setQuestions(res.data);
-        })
-          .catch(err=>{
-            console.log(err);
-          });
-      }
-  
-      function getAllAnswers(){
-        axios.get("http://localhost:8000/api/allAnswers")
-        .then(res => {
-          setAnswers(res.data);
-        })
-          .catch(err=>{
-            console.log(err);
-          });
-      }
+      .catch(err=>{
+        console.log(err);
+      });
+      return tagData;
+  }
 
-      function formattedDateOfQstn(qstn) {
-        const currentDateTime = Date.now() / 1000;
-        const askDate = new Date(qstn.ask_date_time);
-        const askDateInSecs = askDate.getTime() / 1000;
-        const timeSincePost = currentDateTime - askDateInSecs; // in seconds
-    
-        const timeOfPost = new Date(askDateInSecs * 1000);
-        const month = timeOfPost.toLocaleString("default", { month: "short" });
-        const day = timeOfPost.getDate();
-        const year = timeOfPost.getFullYear();
-        let time = timeOfPost.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-    
-        if (timeSincePost < 60) {
-          return Math.round(timeSincePost) + " seconds ago.";
-        } else if (timeSincePost >= 60 && timeSincePost < 3600) {
-          return Math.round(timeSincePost / 60) + " minutes ago.";
-        } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
-          return Math.round(timeSincePost / 3600) + " hours ago.";
-        } else if (timeSincePost >= 86400 && timeSincePost < 31536000) {
-          // seconds in a year
-          if (new Date().getDate() === timeOfPost.getDate()) {
-            if (Math.floor(timeSincePost / 3600) === 1) {
-              time = "1 hour ago";
-            } else {
-              time = Math.floor(timeSincePost / 3600) + " hours ago";
-            }
-          }
-          return month + " " + day + " at " + time;
-        } else if (timeSincePost >= 31536000) {
-          return month + " " + day + ", " + year + " at " + time;
-        }
-      }
+  async function getAllQuestions(){
+    let questionData;
+    await axios.get("http://localhost:8000/api/allQuestions")
+    .then(async function(res) {
+      setQuestions(res.data);
+      questionData = res.data
+      })
+      .catch(err=>{
+        console.log(err);
+      });
+      return questionData;
+  }
 
-      function formattedDateOfAns(ans) {
-        const currentDateTime = Date.now() / 1000;
-        const ansDate = new Date(ans.ans_date_time);
-        const ansDateInSecs = ansDate.getTime() / 1000;
-        const timeSincePost = currentDateTime - ansDateInSecs; // in seconds
-    
-        if (timeSincePost < 60) {
-          return Math.round(timeSincePost) + " seconds ago.";
-        } else if (timeSincePost >= 60 && timeSincePost < 3600) {
-          return Math.round(timeSincePost / 60) + " minutes ago.";
-        } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
-          return timeSincePost / 3600 + " hours ago.";
+  async function getAllAnswers(){
+    let answerData;
+    await axios.get("http://localhost:8000/api/allAnswers")
+    .then(async function(res) {
+      setAnswers(res.data);
+      answerData = res.data
+      })
+      .catch(err=>{
+        console.log(err);
+      });
+      return answerData;
+  }
+
+  function formattedDateOfQstn(qstn) {
+    const currentDateTime = Date.now() / 1000;
+    const askDate = new Date(qstn.ask_date_time);
+    const askDateInSecs = askDate.getTime() / 1000;
+    const timeSincePost = currentDateTime - askDateInSecs; // in seconds
+
+    const timeOfPost = new Date(askDateInSecs * 1000);
+    const month = timeOfPost.toLocaleString("default", { month: "short" });
+    const day = timeOfPost.getDate();
+    const year = timeOfPost.getFullYear();
+    let time = timeOfPost.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    if (timeSincePost < 60) {
+      return Math.round(timeSincePost) + " seconds ago.";
+    } else if (timeSincePost >= 60 && timeSincePost < 3600) {
+      return Math.round(timeSincePost / 60) + " minutes ago.";
+    } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
+      return Math.round(timeSincePost / 3600) + " hours ago.";
+    } else if (timeSincePost >= 86400 && timeSincePost < 31536000) {
+      // seconds in a year
+      if (new Date().getDate() === timeOfPost.getDate()) {
+        if (Math.floor(timeSincePost / 3600) === 1) {
+          time = "1 hour ago";
         } else {
-          const ansYear = new Date(ans.ans_date_time).getFullYear();
-          const ansMonth = ans.ans_date_time.toLocaleString("default", {
-            month: "short",
-          });
-          const ansDay = ans.ans_date_time.getDate();
-          const ansTime = ans.ans_date_time.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-          const today = new Date();
-    
+          time = Math.floor(timeSincePost / 3600) + " hours ago";
+        }
+      }
+      return month + " " + day + " at " + time;
+    } else if (timeSincePost >= 31536000) {
+      return month + " " + day + ", " + year + " at " + time;
+    }
+  }
+
+  function formattedDateOfAns(ans) {
+    const currentDateTime = Date.now() / 1000;
+    const ansDate = new Date(ans.ans_date_time);
+    const ansDateInSecs = ansDate.getTime() / 1000;
+    const timeSincePost = currentDateTime - ansDateInSecs; // in seconds
+
+    const timeOfPost = new Date(ansDateInSecs * 1000);
+    if (timeSincePost < 60) {
+      return Math.round(timeSincePost) + " seconds ago.";
+    } else if (timeSincePost >= 60 && timeSincePost < 3600) {
+      return Math.round(timeSincePost / 60) + " minutes ago.";
+    } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
+      return timeSincePost / 3600 + " hours ago.";
+    } else {
+      const ansYear = new Date(timeOfPost).getFullYear();
+      const ansMonth = timeOfPost.toLocaleString("default", {
+        month: "short",
+      });
+      const ansDay = timeOfPost.getDate();
+      const ansTime = timeOfPost.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const today = new Date();
+
+      if (
+        ansYear === today.getFullYear() &&
+        timeOfPost.toDateString() === today.toDateString()
+      ) {
+        // If the answer was posted today, only show the time
+        return ansTime;
+      } else if (ansYear === today.getFullYear()) {
+        // If the answer was posted within the current year, show month, day and time
+        return ansMonth + " " + ansDay + " at " + ansTime;
+      } else {
+        // If the answer was posted before the current year, show month, day, year and time
+        return ansMonth + " " + ansDay + ", " + ansYear + " at " + ansTime;
+      }
+    }
+  }
+  function searchByInput(text) {
+    const qs = [...questions];
+    const words = text.trim().toLowerCase().split(/\s+/);
+    const results = [];
+
+    for (const question of qs) {
+      let matchFound = false;
+      for (const word of words) {
+        if (
+          !word.startsWith("[") &&
+          !word.endsWith("]") &&
+          (question.title.toLowerCase().includes(word) ||
+            question.text.toLowerCase().includes(word))
+        ) {
+          matchFound = true;
+          break;
+        }
+      }
+      for (const word of words) {
+        if (word.startsWith("[") && word.endsWith("]")) {
+          const tagName = word.slice(1, -1);
           if (
-            ansYear === today.getFullYear() &&
-            ans.ans_date_time.toDateString() === today.toDateString()
+            question.tags.some(
+              (_id) =>
+                tags
+                  .find((tag) => tag._id === _id)
+                  .name.toLowerCase() === tagName.toLowerCase()
+            )
           ) {
-            // If the answer was posted today, only show the time
-            return ansTime;
-          } else if (ansYear === today.getFullYear()) {
-            // If the answer was posted within the current year, show month, day and time
-            return ansMonth + " " + ansDay + " at " + ansTime;
-          } else {
-            // If the answer was posted before the current year, show month, day, year and time
-            return ansMonth + " " + ansDay + ", " + ansYear + " at " + ansTime;
+            matchFound = true;
+            break;
           }
         }
       }
-      function searchByInput(text) {
-        const qs = [...questions];
-        const words = text.trim().toLowerCase().split(/\s+/);
-        const results = [];
+      if (matchFound) {
+        results.push(question);
+      }
+    }
+    return results;
+  }
+
+  function getTidByName(name) {
+    const ts = [...tags];
+    for (let i = 0; i < ts.length; i++) {
+      if (ts[i].name === name) {
+        return ts[i].tid;
+      }
+    }
+    return -1;
+  }
+
+  function sortAnsByDate(ansArr) {
+    ansArr.sort((a, b) => new Date(b.ansDate) - new Date(a.ansDate));
+  }
+
+  function getAnswerBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+    const currAnswers = [...answers];
+    for (let i = 0; i < currAnswers.length; i++) {
+      if (currAnswers[i]._id === _id) {
+        return currAnswers[i];
+      }
+    }
+    return -1;
+  }
+
+  function getTagBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+    const currTags = [...tags];
+    for (let i = 0; i < currTags.length; i++) {
+      if (currTags[i]._id === _id) {
+        return currTags[i];
+      }
+    }
+    return -1;
+  }
+
+  function getTag_IdByName(allTags, tagName){
+    for(const tag of allTags){
+      if(tag.name === tagName){
+        return tag._id;
+      }
+    }
+    return -1;
+  }
+
+  function getTagByTid(tid) {  // gets answer by the _id field in answers, not the aid field
+    const currTags = [...tags];
+    for (let i = 0; i < currTags.length; i++) {
+      if (currTags[i].tid === tid) {
+        return currTags[i];
+      }
+    }
+    return -1;
+  }
+
+  function getNumQuestionsByT_id(t_id) {
+    let count = 0;
+    for (let i = 0; i < questions.length; i++) {
+      if (questions[i].tags.includes(t_id)) {
+        count++;
+      }
+    }
+    return count++;
+  }
+
+  function numWords(str){
+    return str.split(/\s+/).length;
+  }
+
+  function convertTagNamesTo_Ids(allTags, tagNames){
+    const newTags = [];
+    for (let i = 0; i < tagNames.length; i++){
+      newTags[i] = getTag_IdByName(allTags, tagNames[i]);
+    }
+    return newTags;
+  }
+
+  function convertAidtoAns_Id(allAnswers, newAid){
+    for(let i = 0; i < allAnswers.length; i++){
+      if(allAnswers[i].aid === newAid){
+        return allAnswers[i]._id;
+      }
+    }
+    return -1;
+  }
+  
+  async function addTag(tagName, tagCount){
+    let newTagId = "t" + (tagCount + 1);
     
-        for (const question of qs) {
-          let matchFound = false;
-          for (const word of words) {
-            if (
-              !word.startsWith("[") &&
-              !word.endsWith("]") &&
-              (question.title.toLowerCase().includes(word) ||
-                question.text.toLowerCase().includes(word))
-            ) {
-              matchFound = true;
-              break;
-            }
-          }
-          for (const word of words) {
-            if (word.startsWith("[") && word.endsWith("]")) {
-              const tagName = word.slice(1, -1);
-              if (
-                question.tags.some(
-                  (_id) =>
-                    tags
-                      .find((tag) => tag._id === _id)
-                      .name.toLowerCase() === tagName.toLowerCase()
-                )
-              ) {
-                matchFound = true;
-                break;
-              }
-            }
-          }
-          if (matchFound) {
-            results.push(question);
-          }
-        }
-        return results;
-      }
+    await axios.post("http://localhost:8000/api/addTag", {tid: newTagId, name: tagName})
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
+  }
 
-      function getTidByName(name) {
-        const ts = [...tags];
-        for (let i = 0; i < ts.length; i++) {
-          if (ts[i].name === name) {
-            return ts[i].tid;
-          }
-        }
-        return -1;
-      }
+  async function addAnswer(answer){
+    await axios.post("http://localhost:8000/api/addAnswer",
+      {
+      aid: answer.aid,
+      text: answer.text,
+      ans_by: answer.ans_by,
+      ans_date_time: answer.ans_date_time,
+    })
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
+  }
 
-      function sortAnsByDate(ansArr) {
-        ansArr.sort((a, b) => new Date(b.ansDate) - new Date(a.ansDate));
-      }
+  async function addQuestion(q){
+    await axios.post("http://localhost:8000/api/addQuestion",
+      {qid: q.qid, 
+      title: q.title, 
+      text: q.text, 
+      tags: q.tags, 
+      answers: q.answers, 
+      asked_by: q.asked_by, 
+      ask_date_time: q.ask_date_time, 
+      views: q.views
+    })
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
+    await getAllQuestions();
+  }
 
-      function getAnswerBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
-        const currAnswers = [...answers];
-        for (let i = 0; i < currAnswers.length; i++) {
-          if (currAnswers[i]._id === _id) {
-            return currAnswers[i];
-          }
-        }
-        return -1;
-      }
-
-      function getTagBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
-        const currTags = [...tags];
-        for (let i = 0; i < currTags.length; i++) {
-          if (currTags[i]._id === _id) {
-            return currTags[i];
-          }
-        }
-        return -1;
-      }
-
-      function getTagByTid(tid) {  // gets answer by the _id field in answers, not the aid field
-        const currTags = [...tags];
-        for (let i = 0; i < currTags.length; i++) {
-          if (currTags[i].tid === tid) {
-            return currTags[i];
-          }
-        }
-        return -1;
-      }
-
-      function getNumQuestionsByTid(t_id) {
-        let count = 0;
-        for (let i = 0; i < questions.length; i++) {
-          if (questions[i].tags.includes(t_id)) {
-            count++;
-          }
-        }
-        return count++;
-      }
-
-      function numWords(str){
-        return str.split(/\s+/).length;
-      }
-      
-      async function addTag(tagName, tagCount){
-        let newTagId = "t" + (tagCount + 1);
-        
-        await axios.post("http://localhost:8000/api/addTag", {tid: newTagId, name: tagName})
-        .then(response => {console.log(response)})
-        .catch(error => {console.log(error)})
-        await getAllTags();
-      }
+  async function addAnswerToExistingQuestion(activeQid, newAns_Id){
+    await axios.post("http://localhost:8000/api/addAnswerToExistingQuestion",
+     {activeQid: activeQid, newAns_Id: newAns_Id})
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
+    await getAllQuestions();
+  }
 }
