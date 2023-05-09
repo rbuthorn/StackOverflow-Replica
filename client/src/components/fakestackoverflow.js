@@ -70,12 +70,14 @@ function FakeStackOverflowFunc() {
     );
   }
   function Content() {
-    const [activeTab, setActiveTab] = useState(0);
+    const [activeTab, setActiveTab] = useState(5);
     const tabs = ["Questions", "Tags"];
     const [activeQuestionQid, setActiveQuestionQid] = useState(null);
     const [activeButton, setActiveButton] = useState(0);
     const [activeTag, setActiveTag] = useState(null);
     const [currentSearch, setCurrentSearch] = useState(null);
+    const [activeWelcomeButton, setActiveWelcomeButton] = useState(0);
+
 
     const renderContent = () => {
       var currQuestions = [];
@@ -143,8 +145,34 @@ function FakeStackOverflowFunc() {
               activeQuestionQid={activeQuestionQid}
             />
           );
+          //first page when entering application-welcome page
+        case 5:
+          return (
+            <WelcomePage
+              setActiveTab={setActiveTab}
+            />
+          );
+
+        case 6:
+          return (
+            <RegisterPage
+              setActiveTab={setActiveTab}
+            />
+          );
+
+        case 7:
+          return (
+            <LoginPage
+              setActiveTab={setActiveTab}
+            />
+          );
+
         default:
-          return <QuestionsPage setActiveTab={setActiveTab} />;
+          return (
+            <QuestionsPage
+              setActiveTab={setActiveTab}
+            />
+          );
       }
     };
     return (
@@ -182,6 +210,28 @@ function FakeStackOverflowFunc() {
         </div>
       </>
     );
+  }
+
+  function WelcomePage({setActiveTab}){
+    //change the onclick js to match the actual direction of pages later
+    return(
+      <div className="welcomeContainer">
+        <div className="welcomeWindow">
+          <div className="welcomeButton-container">
+            <button className="welcomeButton" onClick={() => setActiveTab(0)}>register as a new user</button>
+            <button className="welcomeButton" onClick={() => setActiveTab(0)}>login as existing user</button>
+            <button className="welcomeButton" onClick={() => setActiveTab(0)}>continue as guest</button>
+          </div>
+        </div>
+      </div>
+    )};
+
+  function RegisterPage({setActiveTab}){
+    
+  }
+
+  function LoginPage({setActiveTab}){
+    
   }
 
   function AnsQuestionPage({
