@@ -76,7 +76,6 @@ function FakeStackOverflowFunc() {
     const [activeButton, setActiveButton] = useState(0);
     const [activeTag, setActiveTag] = useState(null);
     const [currentSearch, setCurrentSearch] = useState(null);
-    const [activeWelcomeButton, setActiveWelcomeButton] = useState(0);
 
 
     const renderContent = () => {
