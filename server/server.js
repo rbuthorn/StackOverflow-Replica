@@ -24,6 +24,8 @@ const mongoose = require("mongoose");
 const Tag = require('./models/tags');
 const Answer = require('./models/answers');
 const Question = require('./models/questions');
+const User = require('./models/users');
+
 
 const mongoDB = "mongodb://127.0.0.1:27017/fake_so";
 mongoose.connect(mongoDB);
@@ -41,39 +43,55 @@ process.on('SIGINT', () => {
     process.exit();
     });
 
+app.get('/api/allUsers', async (req, res) => {
+    await User.find()
+    .then(docs => { res.send(docs);
+        })
+    .catch(err => {
+        res.send(err)
+        });
+});
+
 
 app.get('/api/allTags', async (req, res) => {
-    //Query the database for all documents in the MyModel collection
     await Tag.find()
     .then(docs => { res.send(docs);
         })
     .catch(err => {
         res.send(err)
         });
-        // Send the result back to the client        
     });
 
 app.get('/api/allQuestions', async (req, res) => {
-    //Query the database for all documents in the MyModel collection
     await Question.find()
     .then(docs => { res.send(docs);
         })
     .catch(err => {
         res.send(err)
         });
-        // Send the result back to the client        
 });
 
 app.get('/api/allAnswers', async (req, res) => {
-    //Query the database for all documents in the MyModel collection
     await Answer.find()
     .then(docs => { res.send(docs);
         })
     .catch(err => {
         res.send(err)
         });
-        // Send the result back to the client        
     });
+
+app.post('/api/addUser', async (req, res) => {
+    const {username, email, password} = req.body;
+    const newUser = new User({
+        username: username, 
+        email: email, 
+        password: password
+    });
+
+    await newUser.save()
+    .then(() => {res.send("user saved successfully")})
+    .catch((error) => {res.send(error)})
+});
 
 app.post('/api/addTag', async (req, res) => {
     const {tid, name} = req.body;
