@@ -213,13 +213,12 @@ function FakeStackOverflowFunc() {
   }
 
   function WelcomePage({setActiveTab}){
-    //change the onclick js to match the actual direction of pages later
     return(
       <div className="welcomeContainer">
         <div className="welcomeWindow">
           <div className="welcomeButton-container">
-            <button className="welcomeButton" onClick={() => setActiveTab(0)}>register as a new user</button>
-            <button className="welcomeButton" onClick={() => setActiveTab(0)}>login as existing user</button>
+            <button className="welcomeButton" onClick={() => setActiveTab(6)}>register as a new user</button>
+            <button className="welcomeButton" onClick={() => setActiveTab(7)}>login as existing user</button>
             <button className="welcomeButton" onClick={() => setActiveTab(0)}>continue as guest</button>
           </div>
         </div>
@@ -227,10 +226,197 @@ function FakeStackOverflowFunc() {
     )};
 
   function RegisterPage({setActiveTab}){
-    
+    const [password, setPassword] = useState("");
+    const [passwordVerif, setPasswordVerif] = useState("");
+    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
+    const [emailError, setEmailError] = useState(false);
+    const [usernameError, setUsernameError] = useState(false);
+    const [passwordError, setPasswordError] = useState(false);
+    const [passwordVerifError, setPasswordVerifError] = useState(false);
+
+    function passwordValid(){
+      let email_id = email.split('@')[0];
+      console.log(email_id);
+      if(password.includes(email_id) || password.includes(username)){
+        return false;
+      }
+      return true;
+    }
+
+    function passwordVerified(){
+      if(passwordVerif != password){
+        return false;
+      }
+      return true;
+    }
+
+    function emailValid(){
+      //if user with same email already exists, or if email in invalid form, return false
+      return true;
+    }
+
+    function usernameValid(){
+      if(username.length === 0){
+        return false;
+      }
+      return true;
+    }
+
+    const handleSubmit = async (event) => {
+      event.preventDefault();
+      let badInput = false;
+
+      if(!usernameValid()){
+        setUsernameError(true);
+        badInput = true;
+      }
+      if(!emailValid()){
+        setEmailError(true);
+        badInput = true;
+      }
+      if(!passwordValid()){
+        setPasswordError(true);
+        badInput = true;
+      }
+      if(!passwordVerified()){
+        setPasswordVerifError(true);
+        badInput = true;
+      }
+      if(!badInput){
+        //add user to db
+        setActiveTab(7);
+      }
+    }
+
+    return(
+      <div className="registerContainer">
+        <div className="registerWindow">
+          <form className="registerQuestionForm" onSubmit={handleSubmit}>
+            
+            <div id="registerUsername">
+              <h2>Username</h2>
+              <input
+                className="registerFormInput"
+                id="registerUsernameInput"
+                type="text"
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              {usernameError && <p style={{ color: "red" }}>Enter a valid username</p>}
+            </div>
+            
+            <div id="registerEmail">
+              <h2>Email</h2>
+              <input
+                className="registerFormInput"
+                id="registerEmailInput"
+                type="text"
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {emailError && <p style={{ color: "red" }}>Enter a valid email</p>}
+            </div>
+
+            <div id="registerPassword">
+              <h2>Password</h2>
+              <input
+                className="registerFormInput"
+                id="registerPasswordInput"
+                type="text"
+                onChange={(e) => setPassword(e.target.value)}
+              ></input>
+              {passwordError && <p style={{ color: "red" }}>Enter a valid password</p>}
+            </div>
+
+            <div id="registerPassword2">
+              <h2>Verify Password</h2>
+              <input
+                className="registerFormInput"
+                id="registerPasswordInput2"
+                type="text"
+                onChange={(e) => setPasswordVerif(e.target.value)}
+              ></input>
+              {passwordVerifError && <p style={{ color: "red" }}>Passwords must match exactly</p>}
+            </div>
+
+            <div className="formBottom">
+              <input id="registerUserBtn" type="submit" value="Sign up" />
+            </div>
+
+          </form>
+          
+        </div>
+      </div>
+    )
   }
 
   function LoginPage({setActiveTab}){
+    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState("");
+    const [emailError, setEmailError] = useState(false);
+    const [passwordError, setPasswordError] = useState(false);
+
+    function passwordValid(){
+      //check the that the associated password for the email is correct
+      return true;
+    }
+
+    function emailValid(){
+      //check if email exists in the db
+      return true;
+    }
+
+    const handleSubmit = async (event) => {
+      event.preventDefault();
+      let badInput = false;
+
+      if(!emailValid()){
+        setEmailError(true);
+        badInput = true;
+      }
+      if(!passwordValid()){
+        setPasswordError(true);
+        badInput = true;
+      }
+      if(!badInput){
+        //log user in using a session ?
+        setActiveTab(0);
+      }
+    }
+
+    return(
+      <div className="loginContainer">
+        <div className="loginWindow">
+          <form className="loginQuestionForm" onSubmit={handleSubmit}>
+            
+            <div id="loginEmail">
+              <h2>Email</h2>
+              <input
+                className="loginFormInput"
+                id="loginEmailInput"
+                type="text"
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {emailError && <p style={{ color: "red" }}>Enter a valid email</p>}
+            </div>
+
+            <div id="loginPassword">
+              <h2>Password</h2>
+              <input
+                className="loginFormInput"
+                id="loginPasswordInput"
+                type="text"
+                onChange={(e) => setPassword(e.target.value)}
+              ></input>
+              {passwordError && <p style={{ color: "red" }}>Enter a valid password</p>}
+            </div>
+
+            <div className="formBottom">
+              <input id="loginUserBtn" type="submit" value="Sign in" />
+            </div>
+          </form>
+        </div>
+      </div>
+    )
     
   }
 
