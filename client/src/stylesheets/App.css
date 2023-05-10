@@ -451,3 +451,59 @@ header {
 .welcomeButton:hover {
   background-color: #0056b3;
 }
+
+
+/* TAG PAGE */
+#tagPage {
+  padding: 24px 16px;
+}
+
+#tagHeaderContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0px 30px 50px 30px;
+}
+
+#askQuestionBtnInTag{
+  background-color: #4169e1;
+  margin: 20px 0px;
+  padding: 10px 5px;
+  color: white;
+}
+
+#tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-start;
+}
+
+.tagBoxContainer {
+  width: 30%;
+  display: flex;
+  justify-content: center;
+  margin: 0px 0px 40px 0px;
+}
+
+.tagBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  border: dotted;
+  height: 52px;
+  margin: 0px;
+  width: 120px;
+  text-align: center;
+}
+
+.tagLink {
+  margin: 0px;
+  text-decoration: underline;
+}
+
+.tagText {
+  margin: 0px;
+}
