@@ -11,10 +11,13 @@ function FakeStackOverflowFunc() {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [tags, setTags] = useState([]);
+  const [users, setUsers] = useState([]);
+
   useEffect(() => {
     getAllAnswers();
     getAllQuestions();
     getAllTags();
+    getAllUsers();
   }, []);
 
   return <Content />;
@@ -79,6 +82,7 @@ function FakeStackOverflowFunc() {
 
 
     const renderContent = () => {
+
       var currQuestions = [];
       switch (activeTab) {
         // questions page with newest/active/unanswered
@@ -156,10 +160,12 @@ function FakeStackOverflowFunc() {
           return (
             <RegisterPage
               setActiveTab={setActiveTab}
+              activeTab = {activeTab}
             />
           );
 
         case 7:
+          console.log("login");
           return (
             <LoginPage
               setActiveTab={setActiveTab}
@@ -224,7 +230,7 @@ function FakeStackOverflowFunc() {
       </div>
     )};
 
-  function RegisterPage({setActiveTab}){
+  function RegisterPage({setActiveTab, activeTab}){
     const [password, setPassword] = useState("");
     const [passwordVerif, setPasswordVerif] = useState("");
     const [username, setUsername] = useState("");
@@ -236,31 +242,31 @@ function FakeStackOverflowFunc() {
 
     function passwordValid(){
       let email_id = email.split('@')[0];
-      console.log(email_id);
       if(password.includes(email_id) || password.includes(username)){
         return false;
       }
       return true;
-    }
+    };
 
     function passwordVerified(){
-      if(passwordVerif != password){
+      if(passwordVerif !== password){
         return false;
       }
       return true;
-    }
+    };
 
-    function emailValid(){
-      //if user with same email already exists, or if email in invalid form, return false
+    async function emailValid(){
+      //let allUsers = await getAllUsers();
+      //search for email
       return true;
-    }
+    };
 
     function usernameValid(){
       if(username.length === 0){
         return false;
       }
       return true;
-    }
+    };
 
     const handleSubmit = async (event) => {
       event.preventDefault();
@@ -283,10 +289,18 @@ function FakeStackOverflowFunc() {
         badInput = true;
       }
       if(!badInput){
-        //add user to db
-        setActiveTab(7);
+        let newUser = {
+          username: username,
+          email: email,
+          password: password,
+          admin: false
+        };
+        await addUser(newUser);
+        await getAllUsers();
+
+        await setActiveTab(7);
       }
-    }
+    };
 
     return(
       <div className="registerContainer">
@@ -346,7 +360,7 @@ function FakeStackOverflowFunc() {
         </div>
       </div>
     )
-  }
+  };
 
   function LoginPage({setActiveTab}){
     const [password, setPassword] = useState("");
@@ -1054,6 +1068,20 @@ function FakeStackOverflowFunc() {
       return answerData;
   }
 
+  async function getAllUsers(){
+    let userData;
+    await axios.get("http://localhost:8000/api/allUsers")
+    .then(async function(res) {
+      setUsers(res.data);
+      userData = res.data
+      })
+      .catch(err=>{
+        console.log(err);
+      });
+      return userData;
+  }
+
+
   function formattedDateOfQstn(qstn) {
     const currentDateTime = Date.now() / 1000;
     const askDate = new Date(qstn.ask_date_time);
@@ -1171,16 +1199,6 @@ function FakeStackOverflowFunc() {
     return results;
   }
 
-  function getTidByName(name) {
-    const ts = [...tags];
-    for (let i = 0; i < ts.length; i++) {
-      if (ts[i].name === name) {
-        return ts[i].tid;
-      }
-    }
-    return -1;
-  }
-
   function sortAnsByDate(ansArr) {
     ansArr.sort((a, b) => new Date(b.ansDate) - new Date(a.ansDate));
   }
@@ -1190,16 +1208,6 @@ function FakeStackOverflowFunc() {
     for (let i = 0; i < currAnswers.length; i++) {
       if (currAnswers[i]._id === _id) {
         return currAnswers[i];
-      }
-    }
-    return -1;
-  }
-
-  function getTagBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
-    const currTags = [...tags];
-    for (let i = 0; i < currTags.length; i++) {
-      if (currTags[i]._id === _id) {
-        return currTags[i];
       }
     }
     return -1;
@@ -1289,6 +1297,18 @@ function FakeStackOverflowFunc() {
     .then(response => {console.log(response)})
     .catch(error => {console.log(error)})
     await getAllQuestions();
+  }
+
+  async function addUser(user){
+    await axios.post("http://localhost:8000/api/addUser",
+      {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      admin: user.admin,
+    })
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
   }
 
   async function addAnswerToExistingQuestion(activeQid, newAns_Id){
