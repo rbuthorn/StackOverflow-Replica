@@ -12,6 +12,13 @@ function FakeStackOverflowFunc() {
   const [answers, setAnswers] = useState([]);
   const [tags, setTags] = useState([]);
   const [users, setUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState(5);
+  const [activeTag, setActiveTag] = useState(null);
+  const [activeQuestionQid, setActiveQuestionQid] = useState(null);
+  const [activeButton, setActiveButton] = useState(0);
+  const [currentSearch, setCurrentSearch] = useState(null);
+
+
 
   useEffect(() => {
     getAllAnswers();
@@ -20,7 +27,27 @@ function FakeStackOverflowFunc() {
     getAllUsers();
   }, []);
 
-  return <Content />;
+  return <Content
+    questions={questions}
+    answers = {answers}
+    tags = {tags}
+    users = {users}
+    setQuestions={setQuestions}
+    setAnswers = {setAnswers}
+    setTags = {setTags}
+    setUsers = {setUsers} 
+    activeTab = {activeTab}
+    setActiveTab = {setActiveTab}
+    activeTag = {activeTag}
+    setActiveTag = {setActiveTag}
+    activeQuestionQid = {activeQuestionQid}
+    setActiveQuestionQid = {setActiveQuestionQid}
+    activeButton = {activeButton}
+    setActiveButton = {setActiveButton}
+    currentSearch = {currentSearch}
+    setCurrentSearch = {setCurrentSearch}
+    />;
+
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
     const [searchBarInput, setSearchBarInput] = useState("");
 
@@ -72,17 +99,29 @@ function FakeStackOverflowFunc() {
       </header>
     );
   }
-  function Content() {
-    const [activeTab, setActiveTab] = useState(5);
+  function Content({
+    questions, 
+    answers, 
+    tags, 
+    users, 
+    setQuestions, 
+    setAnswers, 
+    setTags, 
+    setUsers, 
+    activeTab, 
+    setActiveTab, 
+    activeTag, 
+    setActiveTag, 
+    activeQuestionQid,
+    setActiveQuestionQid,
+    activeButton,
+    setActiveButton,
+    currentSearch,
+    setCurrentSearch
+  }) {
     const tabs = ["Questions", "Tags"];
-    const [activeQuestionQid, setActiveQuestionQid] = useState(null);
-    const [activeButton, setActiveButton] = useState(0);
-    const [activeTag, setActiveTag] = useState(null);
-    const [currentSearch, setCurrentSearch] = useState(null);
-
 
     const renderContent = () => {
-
       var currQuestions = [];
       switch (activeTab) {
         // questions page with newest/active/unanswered
@@ -153,6 +192,14 @@ function FakeStackOverflowFunc() {
           return (
             <WelcomePage
               setActiveTab={setActiveTab}
+              questions={questions}
+              answers = {answers}
+              tags = {tags}
+              users = {users}
+              setQuestions={setQuestions}
+              setAnswers = {setAnswers}
+              setTags = {setTags}
+              setUsers = {setUsers}
             />
           );
 
@@ -160,12 +207,18 @@ function FakeStackOverflowFunc() {
           return (
             <RegisterPage
               setActiveTab={setActiveTab}
-              activeTab = {activeTab}
+              questions={questions}
+              answers = {answers}
+              tags = {tags}
+              users = {users}
+              setQuestions={setQuestions}
+              setAnswers = {setAnswers}
+              setTags = {setTags}
+              setUsers = {setUsers}
             />
           );
 
         case 7:
-          console.log("login");
           return (
             <LoginPage
               setActiveTab={setActiveTab}
@@ -217,7 +270,7 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function WelcomePage({setActiveTab}){
+  function WelcomePage({setActiveTab, questions, answers, tags, users}){
     return(
       <div className="welcomeContainer">
         <div className="welcomeWindow">
@@ -230,7 +283,7 @@ function FakeStackOverflowFunc() {
       </div>
     )};
 
-  function RegisterPage({setActiveTab, activeTab}){
+  function RegisterPage({setActiveTab, questions, answers, tags, users}){
     const [password, setPassword] = useState("");
     const [passwordVerif, setPasswordVerif] = useState("");
     const [username, setUsername] = useState("");
@@ -297,15 +350,20 @@ function FakeStackOverflowFunc() {
         };
         await addUser(newUser);
         await getAllUsers();
-
-        await setActiveTab(7);
+        return true;
       }
+      return false;
     };
 
     return(
       <div className="registerContainer">
         <div className="registerWindow">
-          <form className="registerQuestionForm" onSubmit={handleSubmit}>
+          <form className="registerQuestionForm" onSubmit={async (event) => {
+            const successfulSubmit = await handleSubmit(event);
+            if(successfulSubmit === true){
+              setActiveTab(7);
+            }
+            }}>
             
             <div id="registerUsername">
               <h2>Username</h2>
@@ -1032,7 +1090,7 @@ function FakeStackOverflowFunc() {
   async function getAllTags(){
     let tagData;
     await axios.get("http://localhost:8000/api/allTags")
-    .then(async function(res) {
+    .then(function(res) {
       setTags(res.data);
       tagData = res.data
       })
@@ -1045,7 +1103,7 @@ function FakeStackOverflowFunc() {
   async function getAllQuestions(){
     let questionData;
     await axios.get("http://localhost:8000/api/allQuestions")
-    .then(async function(res) {
+    .then(function(res) {
       setQuestions(res.data);
       questionData = res.data
       })
@@ -1058,7 +1116,7 @@ function FakeStackOverflowFunc() {
   async function getAllAnswers(){
     let answerData;
     await axios.get("http://localhost:8000/api/allAnswers")
-    .then(async function(res) {
+    .then(function(res) {
       setAnswers(res.data);
       answerData = res.data
       })
@@ -1071,7 +1129,7 @@ function FakeStackOverflowFunc() {
   async function getAllUsers(){
     let userData;
     await axios.get("http://localhost:8000/api/allUsers")
-    .then(async function(res) {
+    .then(function(res) {
       setUsers(res.data);
       userData = res.data
       })

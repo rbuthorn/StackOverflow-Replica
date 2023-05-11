@@ -81,13 +81,14 @@ app.get('/api/allAnswers', async (req, res) => {
     });
 
 app.post('/api/addUser', async (req, res) => {
-    const {username, email, password} = req.body;
+    const {username, email, password, admin} = req.body;
     const newUser = new User({
         username: username, 
         email: email, 
-        password: password
+        password: password,
+        admin: admin
     });
-
+    
     await newUser.save()
     .then(() => {res.send("user saved successfully")})
     .catch((error) => {res.send(error)})
