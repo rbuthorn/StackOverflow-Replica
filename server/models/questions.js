@@ -13,21 +13,32 @@ const questionModelSchema = new Schema({
         requried: [true, "no title given"],
         maxLength: 100
     },
+    summary: {
+        type: String,
+        required: [true, "no summary given"],
+    },
     text: {
         type: String,
         required: [true, "no text given"]
     },
     tags: [{
         type: Schema.Types.ObjectId,
-        ref: "tagModel"
+        ref: "tagModel",
+        default: []
     }],
     answers: [{
         type : Schema.Types.ObjectId,
-        ref: "answerModel"
+        ref: "answerModel",
+        default: []
+    }],
+    comments: [{
+        type : Schema.Types.ObjectId,
+        ref: "commentModel",
+        default: []
     }],
     asked_by: {
-        type: String, 
-        default: "Anonymous"
+        type: Schema.Types.ObjectId, 
+        ref: "userModel",
     },
     ask_date_time: {
         type: Date,
@@ -35,6 +46,10 @@ const questionModelSchema = new Schema({
     },
     views: {
         type: Number,
+        default: 0
+    },
+    votes: {
+        type:Number,
         default: 0
     },
     url: {

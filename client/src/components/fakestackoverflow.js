@@ -508,23 +508,15 @@ function FakeStackOverflowFunc() {
     activeQuestionQid,
   }) {
     const [text, setText] = useState("");
-    const [username, setUsername] = useState("");
     const [textError, setTextError] = useState(false);
-    const [usernameError, setUsernameError] = useState(false);
     const [hyperlinkError, setHyperlinkError] = useState(false);
 
     const handleSubmit = async (event) => {
       event.preventDefault();
 
       setTextError(false);
-      setUsernameError(false);
       setHyperlinkError(false);
       let badInput = false;
-
-      if (username.length === 0) {
-        setUsernameError(true);
-        badInput = true;
-      }
 
       let tempText = text;
 
@@ -557,8 +549,9 @@ function FakeStackOverflowFunc() {
         const newAns = {
           aid: newAid,
           text: tempText,
-          ans_by: username,
+          ans_by: users[0],
           ans_date_time: date,
+          comments: []
         };
         await addAnswer(newAns);  //add new answer object to database
         let allAnswers = await getAllAnswers();
@@ -574,16 +567,6 @@ function FakeStackOverflowFunc() {
 
     return (
       <form className="ansQuestionForm" onSubmit={handleSubmit}>
-        <div id="answerUsername">
-          <h2>Username*</h2>
-          <input
-            className="ansQuestionInput"
-            id="answerUsernameInput"
-            type="text"
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          {usernameError && <p style={{ color: "red" }}>Enter a username</p>}
-        </div>
 
         <div id="answerText">
           <h2>Answer Text*</h2>
@@ -724,11 +707,11 @@ function FakeStackOverflowFunc() {
     const [title, setTitle] = useState("");
     const [text, setText] = useState("");
     const [newQuestionTags, setNewQuestionTags] = useState("");
-    const [username, setUsername] = useState("");
+    const [summary, setSummary] = useState("");
     const [titleError, setTitleError] = useState(false);
     const [textError, setTextError] = useState(false);
     const [tagsError, setTagsError] = useState(false);
-    const [usernameError, setUsernameError] = useState(false);
+    const [summaryError, setSummaryError] = useState(false);
     const [hyperlinkError, setHyperlinkError] = useState(false);
     let tagCount = tags.length;
     
@@ -738,7 +721,7 @@ function FakeStackOverflowFunc() {
       setTitleError(false);
       setTextError(false);
       setTagsError(false);
-      setUsernameError(false);
+      setSummaryError(false);
       setHyperlinkError(false);
 
       let badInput = false;
@@ -772,8 +755,8 @@ function FakeStackOverflowFunc() {
           }
         }
       }
-      if (username.length === 0) {
-        setUsernameError(true);
+      if (summary.length > 140) {
+        setSummaryError(true);
         badInput = true;
       }
 
@@ -807,10 +790,12 @@ function FakeStackOverflowFunc() {
         let qstn = {  
         qid: "q" + (questions.length + 1),
         title: title,
+        summary: summary,
         text: tempText,
         tags: qstnTags,
+        comments: [],
         answers: [],
-        asked_by: username,
+        asked_by: users[0], //change to grabbing user from session id
         ask_date_time: date,
         views: 0,
         };
@@ -830,7 +815,7 @@ function FakeStackOverflowFunc() {
         <div id="questionTitle">
           <h2>Question Title*</h2>
           <p>
-            <em>Limit title to 100 characters or less</em>
+            <em>Limit title to 50 characters or less</em>
           </p>
           <input
             className="askQuestionInput"
@@ -841,6 +826,23 @@ function FakeStackOverflowFunc() {
           />
           {titleError && (
             <p style={{ color: "red" }}>Title is either too long or empty</p>
+          )}
+        </div>
+
+        <div id="questionSummary">
+          <h2>Question Summary*</h2>
+          <p>
+            <em>Limit summary to 140 characters or less</em>
+          </p>
+          <input
+            className="askQuestionInput"
+            id="questionSummaryInput"
+            type="text"
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+          />
+          {summaryError && (
+            <p style={{ color: "red" }}>Summary is too long</p>
           )}
         </div>
 
@@ -877,17 +879,6 @@ function FakeStackOverflowFunc() {
           {tagsError && <p style={{ color: "red" }}>Invalid tag input</p>}
         </div>
 
-        <div id="questionUsername">
-          <h2>Username*</h2>
-          <input
-            className="askQuestionInput"
-            id="usernameInput"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          {usernameError && <p style={{ color: "red" }}>Enter a username</p>}
-        </div>
         <div className="formBottom">
           <input id="postQuestionBtn" type="submit" value="Post Question" />
           <p style={{ color: "red" }}>* indicates mandatory fields</p>
@@ -903,6 +894,7 @@ function FakeStackOverflowFunc() {
       currAnswers.push(getAnswerBy_Id(question.answers[i]));
     }
     sortAnsByDate(currAnswers);
+    console.log(currAnswers);
     function handleAnsQues(event) {
       event.preventDefault();
       setActiveTab(4);
@@ -942,10 +934,6 @@ function FakeStackOverflowFunc() {
         <div id="aPageAnswers">
           {currAnswers.map((answer, index) => (
             <div className="aPageAnswer" key={index}>
-              <div
-                id="qText"
-                dangerouslySetInnerHTML={{ __html: answer.text }}
-              ></div>
               <p className="aPageText">{answer.text}</p>
               <div className="aPageAskedBy">
                 <span className="userAnsrPage">{answer.ans_by}</span>
@@ -1194,39 +1182,34 @@ function FakeStackOverflowFunc() {
     const timeSincePost = currentDateTime - ansDateInSecs; // in seconds
 
     const timeOfPost = new Date(ansDateInSecs * 1000);
+    const month = timeOfPost.toLocaleString("default", { month: "short" });
+    const day = timeOfPost.getDate();
+    const year = timeOfPost.getFullYear();
+    let time = timeOfPost.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     if (timeSincePost < 60) {
       return Math.round(timeSincePost) + " seconds ago.";
     } else if (timeSincePost >= 60 && timeSincePost < 3600) {
       return Math.round(timeSincePost / 60) + " minutes ago.";
     } else if (timeSincePost >= 3600 && timeSincePost < 86400) {
-      return timeSincePost / 3600 + " hours ago.";
-    } else {
-      const ansYear = new Date(timeOfPost).getFullYear();
-      const ansMonth = timeOfPost.toLocaleString("default", {
-        month: "short",
-      });
-      const ansDay = timeOfPost.getDate();
-      const ansTime = timeOfPost.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      const today = new Date();
-
-      if (
-        ansYear === today.getFullYear() &&
-        timeOfPost.toDateString() === today.toDateString()
-      ) {
-        // If the answer was posted today, only show the time
-        return ansTime;
-      } else if (ansYear === today.getFullYear()) {
-        // If the answer was posted within the current year, show month, day and time
-        return ansMonth + " " + ansDay + " at " + ansTime;
-      } else {
-        // If the answer was posted before the current year, show month, day, year and time
-        return ansMonth + " " + ansDay + ", " + ansYear + " at " + ansTime;
+      return Math.round(timeSincePost / 3600) + " hours ago.";
+    } else if (timeSincePost >= 86400 && timeSincePost < 31536000) {
+      // seconds in a year
+      if (new Date().getDate() === timeOfPost.getDate()) {
+        if (Math.floor(timeSincePost / 3600) === 1) {
+          time = "1 hour ago";
+        } else {
+          time = Math.floor(timeSincePost / 3600) + " hours ago";
+        }
       }
+      return month + " " + day + " at " + time;
+    } else if (timeSincePost >= 31536000) {
+      return month + " " + day + ", " + year + " at " + time;
     }
   }
+
   function searchByInput(text) {
     const qs = [...questions];
     const words = text.trim().toLowerCase().split(/\s+/);
@@ -1347,6 +1330,7 @@ function FakeStackOverflowFunc() {
       text: answer.text,
       ans_by: answer.ans_by,
       ans_date_time: answer.ans_date_time,
+      comments: answer.comments
     })
     .then(response => {console.log(response)})
     .catch(error => {console.log(error)})
@@ -1355,9 +1339,11 @@ function FakeStackOverflowFunc() {
   async function addQuestion(q){
     await axios.post("http://localhost:8000/api/addQuestion",
       {qid: q.qid, 
-      title: q.title, 
+      title: q.title,
+      summary: q.summary, 
       text: q.text, 
       tags: q.tags, 
+      comments: q.comments,
       answers: q.answers, 
       asked_by: q.asked_by, 
       ask_date_time: q.ask_date_time, 
