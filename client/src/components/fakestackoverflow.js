@@ -58,6 +58,11 @@ function FakeStackOverflowFunc() {
       }
     }
 
+    function logOut(event){
+      //end user session
+      setActiveTab(5);
+    }
+
     function handleInputChange(event) {
       setSearchBarInput(event.target.value);
     }
@@ -70,12 +75,11 @@ function FakeStackOverflowFunc() {
     return (
       <header>
         <div className="topbar">
-          <div className="search-bar">
-            <input
-              type="text"
-              className="search-bar invis"
-              placeholder="Search . . ."
-            ></input>
+          <div>
+            <button
+              className="logoutBtn"
+              onClick={logOut}
+            >Log out</button>
           </div>
           <div className="brand-logo">
             <a href="/" className="brand-logo" onClick={handleLogoClick}>
