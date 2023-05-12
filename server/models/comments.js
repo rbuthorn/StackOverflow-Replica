@@ -16,6 +16,10 @@ const commentModelSchema = new Schema({
         type: Number,
         default: 0
     },
+    comment_by: {
+        type: String,
+        required: [true, "no comment_by given"]
+    },
     url: {
         type: String,
         default: "posts/comment/_id",
