@@ -11,13 +11,41 @@ function FakeStackOverflowFunc() {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [tags, setTags] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState(5);
+  const [activeTag, setActiveTag] = useState(null);
+  const [activeQuestionQid, setActiveQuestionQid] = useState(null);
+  const [activeButton, setActiveButton] = useState(0);
+  const [currentSearch, setCurrentSearch] = useState(null);
+
   useEffect(() => {
     getAllAnswers();
     getAllQuestions();
     getAllTags();
+    getAllUsers();
   }, []);
 
-  return <Content />;
+  return <Content
+    questions={questions}
+    answers = {answers}
+    tags = {tags}
+    users = {users}
+    setQuestions={setQuestions}
+    setAnswers = {setAnswers}
+    setTags = {setTags}
+    setUsers = {setUsers} 
+    activeTab = {activeTab}
+    setActiveTab = {setActiveTab}
+    activeTag = {activeTag}
+    setActiveTag = {setActiveTag}
+    activeQuestionQid = {activeQuestionQid}
+    setActiveQuestionQid = {setActiveQuestionQid}
+    activeButton = {activeButton}
+    setActiveButton = {setActiveButton}
+    currentSearch = {currentSearch}
+    setCurrentSearch = {setCurrentSearch}
+    />;
+
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
     const [searchBarInput, setSearchBarInput] = useState("");
 
@@ -28,6 +56,11 @@ function FakeStackOverflowFunc() {
         setActiveTab(0);
         setCurrentSearch(searchString);
       }
+    }
+
+    function logOut(event){
+      //end user session
+      setActiveTab(5);
     }
 
     function handleInputChange(event) {
@@ -42,12 +75,11 @@ function FakeStackOverflowFunc() {
     return (
       <header>
         <div className="topbar">
-          <div className="search-bar">
-            <input
-              type="text"
-              className="search-bar invis"
-              placeholder="Search . . ."
-            ></input>
+          <div>
+            <button
+              className="logoutBtn"
+              onClick={logOut}
+            >Log out</button>
           </div>
           <div className="brand-logo">
             <a href="/" className="brand-logo" onClick={handleLogoClick}>
@@ -69,14 +101,27 @@ function FakeStackOverflowFunc() {
       </header>
     );
   }
-  function Content() {
-    const [activeTab, setActiveTab] = useState(5);
+  function Content({
+    questions, 
+    answers, 
+    tags, 
+    users, 
+    setQuestions, 
+    setAnswers, 
+    setTags, 
+    setUsers, 
+    activeTab, 
+    setActiveTab, 
+    activeTag, 
+    setActiveTag, 
+    activeQuestionQid,
+    setActiveQuestionQid,
+    activeButton,
+    setActiveButton,
+    currentSearch,
+    setCurrentSearch
+  }) {
     const tabs = ["Questions", "Tags"];
-    const [activeQuestionQid, setActiveQuestionQid] = useState(null);
-    const [activeButton, setActiveButton] = useState(0);
-    const [activeTag, setActiveTag] = useState(null);
-    const [currentSearch, setCurrentSearch] = useState(null);
-
 
     const renderContent = () => {
       var currQuestions = [];
@@ -149,6 +194,14 @@ function FakeStackOverflowFunc() {
           return (
             <WelcomePage
               setActiveTab={setActiveTab}
+              questions={questions}
+              answers = {answers}
+              tags = {tags}
+              users = {users}
+              setQuestions={setQuestions}
+              setAnswers = {setAnswers}
+              setTags = {setTags}
+              setUsers = {setUsers}
             />
           );
 
@@ -156,6 +209,14 @@ function FakeStackOverflowFunc() {
           return (
             <RegisterPage
               setActiveTab={setActiveTab}
+              questions={questions}
+              answers = {answers}
+              tags = {tags}
+              users = {users}
+              setQuestions={setQuestions}
+              setAnswers = {setAnswers}
+              setTags = {setTags}
+              setUsers = {setUsers}
             />
           );
 
@@ -224,7 +285,7 @@ function FakeStackOverflowFunc() {
       </div>
     )};
 
-  function RegisterPage({setActiveTab}){
+  function RegisterPage({setActiveTab, users}){
     const [password, setPassword] = useState("");
     const [passwordVerif, setPasswordVerif] = useState("");
     const [username, setUsername] = useState("");
@@ -236,35 +297,41 @@ function FakeStackOverflowFunc() {
 
     function passwordValid(){
       let email_id = email.split('@')[0];
-      console.log(email_id);
       if(password.includes(email_id) || password.includes(username)){
         return false;
       }
       return true;
-    }
+    };
 
     function passwordVerified(){
-      if(passwordVerif != password){
+      if(passwordVerif !== password){
         return false;
       }
       return true;
-    }
+    };
 
     function emailValid(){
-      //if user with same email already exists, or if email in invalid form, return false
+      const emails = users.map(user => user.email);
+      if (emails.includes(email)){
+        return false;
+      }
       return true;
-    }
+    };
 
     function usernameValid(){
       if(username.length === 0){
         return false;
       }
       return true;
-    }
+    };
 
     const handleSubmit = async (event) => {
       event.preventDefault();
       let badInput = false;
+      setUsernameError(false);
+      setEmailError(false);
+      setPasswordError(false);
+      setPasswordVerifError(false);
 
       if(!usernameValid()){
         setUsernameError(true);
@@ -283,10 +350,17 @@ function FakeStackOverflowFunc() {
         badInput = true;
       }
       if(!badInput){
-        //add user to db
+        let newUser = {
+          username: username,
+          email: email,
+          password: password,
+          admin: false
+        };
+        await addUser(newUser);
+        await getAllUsers();
         setActiveTab(7);
       }
-    }
+    };
 
     return(
       <div className="registerContainer">
@@ -346,7 +420,7 @@ function FakeStackOverflowFunc() {
         </div>
       </div>
     )
-  }
+  };
 
   function LoginPage({setActiveTab}){
     const [password, setPassword] = useState("");
@@ -355,18 +429,27 @@ function FakeStackOverflowFunc() {
     const [passwordError, setPasswordError] = useState(false);
 
     function passwordValid(){
-      //check the that the associated password for the email is correct
-      return true;
+      const matchingUser = users.filter(user => user.email === email);
+      if (matchingUser.length === 0 || matchingUser[0].password === password){
+        return true;
+      }
+      return false;
     }
 
     function emailValid(){
-      //check if email exists in the db
-      return true;
+      const emails = users.map(user => user.email);
+      if(emails.includes(email)){
+        return true;
+      }
+      return false;
     }
 
     const handleSubmit = async (event) => {
       event.preventDefault();
       let badInput = false;
+
+      setEmailError(false);
+      setPasswordError(false);
 
       if(!emailValid()){
         setEmailError(true);
@@ -1018,7 +1101,7 @@ function FakeStackOverflowFunc() {
   async function getAllTags(){
     let tagData;
     await axios.get("http://localhost:8000/api/allTags")
-    .then(async function(res) {
+    .then(function(res) {
       setTags(res.data);
       tagData = res.data
       })
@@ -1031,7 +1114,7 @@ function FakeStackOverflowFunc() {
   async function getAllQuestions(){
     let questionData;
     await axios.get("http://localhost:8000/api/allQuestions")
-    .then(async function(res) {
+    .then(function(res) {
       setQuestions(res.data);
       questionData = res.data
       })
@@ -1044,7 +1127,7 @@ function FakeStackOverflowFunc() {
   async function getAllAnswers(){
     let answerData;
     await axios.get("http://localhost:8000/api/allAnswers")
-    .then(async function(res) {
+    .then(function(res) {
       setAnswers(res.data);
       answerData = res.data
       })
@@ -1053,6 +1136,20 @@ function FakeStackOverflowFunc() {
       });
       return answerData;
   }
+
+  async function getAllUsers(){
+    let userData;
+    await axios.get("http://localhost:8000/api/allUsers")
+    .then(function(res) {
+      setUsers(res.data);
+      userData = res.data
+      })
+      .catch(err=>{
+        console.log(err);
+      });
+      return userData;
+  }
+
 
   function formattedDateOfQstn(qstn) {
     const currentDateTime = Date.now() / 1000;
@@ -1171,16 +1268,6 @@ function FakeStackOverflowFunc() {
     return results;
   }
 
-  function getTidByName(name) {
-    const ts = [...tags];
-    for (let i = 0; i < ts.length; i++) {
-      if (ts[i].name === name) {
-        return ts[i].tid;
-      }
-    }
-    return -1;
-  }
-
   function sortAnsByDate(ansArr) {
     ansArr.sort((a, b) => new Date(b.ansDate) - new Date(a.ansDate));
   }
@@ -1190,16 +1277,6 @@ function FakeStackOverflowFunc() {
     for (let i = 0; i < currAnswers.length; i++) {
       if (currAnswers[i]._id === _id) {
         return currAnswers[i];
-      }
-    }
-    return -1;
-  }
-
-  function getTagBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
-    const currTags = [...tags];
-    for (let i = 0; i < currTags.length; i++) {
-      if (currTags[i]._id === _id) {
-        return currTags[i];
       }
     }
     return -1;
@@ -1289,6 +1366,18 @@ function FakeStackOverflowFunc() {
     .then(response => {console.log(response)})
     .catch(error => {console.log(error)})
     await getAllQuestions();
+  }
+
+  async function addUser(user){
+    await axios.post("http://localhost:8000/api/addUser",
+      {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      admin: user.admin,
+    })
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
   }
 
   async function addAnswerToExistingQuestion(activeQid, newAns_Id){

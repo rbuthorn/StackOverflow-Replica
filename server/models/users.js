@@ -13,6 +13,10 @@ const userModelSchema = new Schema({
     password: {
         type: String,
         required: [true, "no password given"]
+    },
+    admin: {
+        type: Boolean,
+        default: false
     }
 });
 
