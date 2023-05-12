@@ -33,7 +33,7 @@ header {
 
 .logoutBtn{
   background-color: #4169e1;
-  margin: 7px 30px 20px 20px;
+  margin: 10px 30px 20px 20px;
   padding: 12px 25px;
   color: white;
 }
@@ -310,6 +310,46 @@ header {
   justify-content: space-between;
   min-height: 120px;
   margin: 10px 15px;
+}
+
+.comments-section {
+  width: 100%;
+  max-width: 600px;
+  margin: auto;
+}
+
+.comment-box {
+  border: 1px solid #ccc;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.vote-section {
+  display: flex;
+  align-items: center;
+}
+
+.vote-button {
+  padding: 0;
+  margin: 2px 0px 2px 0px;
+  font-size: small;
+  cursor: pointer;
+}
+
+.vote-count{
+  font-size: small;
+}
+
+.vote-button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.comment-text {
+  margin-left: 30px;
+  font-size: small;
 }
 
 .numViewsContainer {

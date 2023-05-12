@@ -40,8 +40,8 @@ function answerCreate(aid, text, ans_by, ans_date_time, comments) {
   return answer.save();
 }
 
-function commentCreate(text, com_date_time) {
-  commentdetail = {text: text, com_date_time:com_date_time};
+function commentCreate(text, comment_by) {
+  commentdetail = {text: text, comment_by: comment_by};
 
   let comment = new Comment(commentdetail);
   return comment.save();
@@ -83,16 +83,16 @@ const populate = async () => {
   let t3 = await tagCreate('t3', 'android-studio');
   let t4 = await tagCreate('t4', 'shared-preferences');
 
-  let c1 = await commentCreate('Have you tried simplifying the problem?');
-  let c2 = await commentCreate('I dont underdstand this question');
-  let c3 = await commentCreate('why did you try it this way?');
-  let c4 = await commentCreate('wow you are smart');
+  let c1 = await commentCreate('Have you tried simplifying the problem?', u1.username);
+  let c2 = await commentCreate('I dont underdstand this question', u1.username);
+  let c3 = await commentCreate('why did you try it this way?', u1.username);
+  let c4 = await commentCreate('wow you are smart', u1.username);
 
-  let c5 = await commentCreate('What does this mean?');
-  let c6 = await commentCreate('How to implement this?');
-  let c7 = await commentCreate('Good answer');
-  let c8 = await commentCreate('thanks for the help');
-  let c9 = await commentCreate('that works, thank you');
+  let c5 = await commentCreate('What does this mean?', u1.username);
+  let c6 = await commentCreate('How to implement this?', u1.username);
+  let c7 = await commentCreate('Good answer', u1.username);
+  let c8 = await commentCreate('thanks for the help', u1.username);
+  let c9 = await commentCreate('that works, thank you', u1.username);
 
 
   let a1 = await answerCreate('a1', 'React Router is mostly a wrapper around the history library. history handles interaction with the browser\'s window.history for you with its browser and hash histories. It also provides a memory history which is useful for environments that don\'t have a global history. This is particularly useful in mobile app development (react-native) and unit testing with Node.', u1, false, [c5, c6, c7, c8]);

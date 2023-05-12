@@ -12,6 +12,7 @@ function FakeStackOverflowFunc() {
   const [answers, setAnswers] = useState([]);
   const [tags, setTags] = useState([]);
   const [users, setUsers] = useState([]);
+  const [comments, setComments] = useState([]);
   const [activeTab, setActiveTab] = useState(5);
   const [activeTag, setActiveTag] = useState(null);
   const [activeQuestionQid, setActiveQuestionQid] = useState(null);
@@ -23,6 +24,7 @@ function FakeStackOverflowFunc() {
     getAllQuestions();
     getAllTags();
     getAllUsers();
+    getAllComments();
   }, []);
 
   return <Content
@@ -893,11 +895,22 @@ function FakeStackOverflowFunc() {
     for (let i = 0; i < question.answers.length; i++){
       currAnswers.push(getAnswerBy_Id(question.answers[i]));
     }
+
+    const currQstnComments = [...question.comments];
+    const qstnComments = comments.filter(comment => currQstnComments.includes(comment._id));
+
     sortAnsByDate(currAnswers);
-    console.log(currAnswers);
+    console.log(qstnComments);
     function handleAnsQues(event) {
       event.preventDefault();
       setActiveTab(4);
+    }
+
+    function handleUpvote(){
+
+    }
+    function handleDownvote(){
+
     }
 
     return (
@@ -915,6 +928,7 @@ function FakeStackOverflowFunc() {
               Ask Question{" "}
             </button>
           </div>
+
           <div className="aPageHeader-2">
             <div className="numViewsContainer">
               <h3 id="numViews">{question.views} views</h3>
@@ -930,7 +944,25 @@ function FakeStackOverflowFunc() {
               </span>
             </div>
           </div>
+
+          <div className="aPageHeader-3">
+            <div className="comments-section">
+              {qstnComments.map((comment, index) => (
+              <div className="comment-box" key = {index}>
+                <div className="vote-section">
+                  <div className="vote-button-container">
+                    <button className="vote-button" onClick={handleUpvote}>upvote</button>
+                    <span className = "vote-count"> {comment.votes} </span>
+                    <button className="vote-button" onClick = {handleDownvote}>downvote</button>
+                  </div>
+                  <span className="comment-text">{comment.text}</span>
+                </div>
+              </div>
+              ))}
+            </div>
         </div>
+      </div>
+
         <div id="aPageAnswers">
           {currAnswers.map((answer, index) => (
             <div className="aPageAnswer" key={index}>
@@ -1137,6 +1169,20 @@ function FakeStackOverflowFunc() {
       });
       return userData;
   }
+
+  async function getAllComments(){
+    let commentData;
+    await axios.get("http://localhost:8000/api/allComments")
+    .then(function(res) {
+      setComments(res.data);
+      commentData = res.data
+      })
+      .catch(err=>{
+        console.log(err);
+      });
+      return commentData;
+  }
+
 
 
   function formattedDateOfQstn(qstn) {
@@ -1361,6 +1407,17 @@ function FakeStackOverflowFunc() {
       email: user.email,
       password: user.password,
       admin: user.admin,
+    })
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
+  }
+
+  async function addComment(comment){
+    await axios.post("http://localhost:8000/api/addComment",
+      {
+      text: comment.text,
+      com_date_time: comment.com_date_time,
+      comment_by: comment.comment_by,
     })
     .then(response => {console.log(response)})
     .catch(error => {console.log(error)})

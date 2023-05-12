@@ -106,11 +106,12 @@ app.post('/api/addUser', async (req, res) => {
 });
 
 app.post('/api/addComment', async (req, res) => {
-    const {text, com_date_time, votes} = req.body;
+    const {text, com_date_time, votes, comment_by} = req.body;
     const newComment = new Comment({
         text: text, 
         com_date_time: com_date_time, 
         votes: votes,
+        comment_by: comment_by
     });
 
     await newComment.save()
