@@ -25,6 +25,8 @@ const Tag = require('./models/tags');
 const Answer = require('./models/answers');
 const Question = require('./models/questions');
 const User = require('./models/users');
+const Comment = require('./models/comments');
+
 
 
 const mongoDB = "mongodb://127.0.0.1:27017/fake_so";
@@ -80,6 +82,15 @@ app.get('/api/allAnswers', async (req, res) => {
         });
     });
 
+app.get('/api/allComments', async (req, res) => {
+    await Comment.find()
+    .then(docs => { res.send(docs);
+        })
+    .catch(err => {
+        res.send(err)
+        });
+    });
+
 app.post('/api/addUser', async (req, res) => {
     const {username, email, password, admin} = req.body;
     const newUser = new User({
@@ -88,9 +99,22 @@ app.post('/api/addUser', async (req, res) => {
         password: password,
         admin: admin
     });
-    
+
     await newUser.save()
     .then(() => {res.send("user saved successfully")})
+    .catch((error) => {res.send(error)})
+});
+
+app.post('/api/addComment', async (req, res) => {
+    const {text, com_date_time, votes} = req.body;
+    const newComment = new Comment({
+        text: text, 
+        com_date_time: com_date_time, 
+        votes: votes,
+    });
+
+    await newComment.save()
+    .then(() => {res.send("comment saved successfully")})
     .catch((error) => {res.send(error)})
 });
 
@@ -104,7 +128,7 @@ app.post('/api/addTag', async (req, res) => {
 });
 
 app.post('/api/addQuestion', async (req, res) => {
-    const {qid, title, text, tags, answers, asked_by, ask_date_time, views} = req.body;
+    const {qid, title, summary, text, tags, comments, answers, asked_by, ask_date_time, views} = req.body;
     const qstnTags = [];
     for(let i = 0; i < tags.length; i++){
         let objId = new ObjectId(tags[i]);
@@ -112,9 +136,11 @@ app.post('/api/addQuestion', async (req, res) => {
     }
     const newQuestion = new Question({
         qid: qid, 
-        title:title, 
+        title:title,
+        summary: summary,
         text: text, 
         tags: qstnTags,
+        comments: comments,
         answers: answers, 
         asked_by: asked_by, 
         ask_date_time: ask_date_time, 
@@ -127,12 +153,13 @@ app.post('/api/addQuestion', async (req, res) => {
 });
 
 app.post('/api/addAnswer', async (req, res) => {
-    const {aid, text, ans_by, ask_date_time} = req.body;
+    const {aid, text, ans_by, ask_date_time, comments} = req.body;
     const newAnswer = new Answer({
         aid: aid, 
         text: text, 
         ans_by: ans_by, 
         ask_date_time: ask_date_time, 
+        comments: comments
       });
 
     await newAnswer.save()
