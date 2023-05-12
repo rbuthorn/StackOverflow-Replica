@@ -13,13 +13,22 @@ const answerModelSchema = new Schema({
         required: [true, "no text given"]
     },
     ans_by: {
-        type: String, 
-        required: [true, "no ans_by string"]
+        type: Schema.Types.ObjectId, 
+        ref: "userModel"
     },
     ans_date_time: {
         type: Date,
         default: date
     },
+    votes: {
+        type:Number,
+        defualt: 0
+    },
+    comments: [{
+        type : Schema.Types.ObjectId,
+        ref: "commentModel",
+        default: []
+    }],
     url: {
         type: String,
         default: "posts/answer/_id",
