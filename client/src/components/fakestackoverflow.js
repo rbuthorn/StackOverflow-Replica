@@ -18,8 +18,6 @@ function FakeStackOverflowFunc() {
   const [activeButton, setActiveButton] = useState(0);
   const [currentSearch, setCurrentSearch] = useState(null);
 
-
-
   useEffect(() => {
     getAllAnswers();
     getAllQuestions();
@@ -270,7 +268,7 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function WelcomePage({setActiveTab, questions, answers, tags, users}){
+  function WelcomePage({setActiveTab}){
     return(
       <div className="welcomeContainer">
         <div className="welcomeWindow">
@@ -283,7 +281,7 @@ function FakeStackOverflowFunc() {
       </div>
     )};
 
-  function RegisterPage({setActiveTab, questions, answers, tags, users}){
+  function RegisterPage({setActiveTab, users}){
     const [password, setPassword] = useState("");
     const [passwordVerif, setPasswordVerif] = useState("");
     const [username, setUsername] = useState("");
@@ -308,9 +306,11 @@ function FakeStackOverflowFunc() {
       return true;
     };
 
-    async function emailValid(){
-      //let allUsers = await getAllUsers();
-      //search for email
+    function emailValid(){
+      const emails = users.map(user => user.email);
+      if (emails.includes(email)){
+        return false;
+      }
       return true;
     };
 
@@ -324,6 +324,10 @@ function FakeStackOverflowFunc() {
     const handleSubmit = async (event) => {
       event.preventDefault();
       let badInput = false;
+      setUsernameError(false);
+      setEmailError(false);
+      setPasswordError(false);
+      setPasswordVerifError(false);
 
       if(!usernameValid()){
         setUsernameError(true);
@@ -350,20 +354,14 @@ function FakeStackOverflowFunc() {
         };
         await addUser(newUser);
         await getAllUsers();
-        return true;
+        setActiveTab(7);
       }
-      return false;
     };
 
     return(
       <div className="registerContainer">
         <div className="registerWindow">
-          <form className="registerQuestionForm" onSubmit={async (event) => {
-            const successfulSubmit = await handleSubmit(event);
-            if(successfulSubmit === true){
-              setActiveTab(7);
-            }
-            }}>
+          <form className="registerQuestionForm" onSubmit={handleSubmit}>
             
             <div id="registerUsername">
               <h2>Username</h2>
@@ -427,18 +425,27 @@ function FakeStackOverflowFunc() {
     const [passwordError, setPasswordError] = useState(false);
 
     function passwordValid(){
-      //check the that the associated password for the email is correct
-      return true;
+      const matchingUser = users.filter(user => user.email === email);
+      if (matchingUser.length === 0 || matchingUser[0].password === password){
+        return true;
+      }
+      return false;
     }
 
     function emailValid(){
-      //check if email exists in the db
-      return true;
+      const emails = users.map(user => user.email);
+      if(emails.includes(email)){
+        return true;
+      }
+      return false;
     }
 
     const handleSubmit = async (event) => {
       event.preventDefault();
       let badInput = false;
+
+      setEmailError(false);
+      setPasswordError(false);
 
       if(!emailValid()){
         setEmailError(true);
