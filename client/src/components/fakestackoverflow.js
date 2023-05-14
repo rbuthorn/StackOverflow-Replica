@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import bcrypt from "bcryptjs";
 
 export default class FakeStackOverflow extends React.Component {
   render() {
-    return (<FakeStackOverflowFunc />)
+    return <FakeStackOverflowFunc />;
   }
 }
 
@@ -18,6 +19,22 @@ function FakeStackOverflowFunc() {
   const [activeQuestionQid, setActiveQuestionQid] = useState(null);
   const [activeButton, setActiveButton] = useState(0);
   const [currentSearch, setCurrentSearch] = useState(null);
+  /*const startSession = (user) => {
+    fetch("/api/startSession", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Session started:", data);
+      })
+      .catch((error) => {
+        console.log("Error starting session:", error);
+      });
+  };*/
 
   useEffect(() => {
     getAllAnswers();
@@ -27,26 +44,28 @@ function FakeStackOverflowFunc() {
     getAllComments();
   }, []);
 
-  return <Content
-    questions={questions}
-    answers = {answers}
-    tags = {tags}
-    users = {users}
-    setQuestions={setQuestions}
-    setAnswers = {setAnswers}
-    setTags = {setTags}
-    setUsers = {setUsers} 
-    activeTab = {activeTab}
-    setActiveTab = {setActiveTab}
-    activeTag = {activeTag}
-    setActiveTag = {setActiveTag}
-    activeQuestionQid = {activeQuestionQid}
-    setActiveQuestionQid = {setActiveQuestionQid}
-    activeButton = {activeButton}
-    setActiveButton = {setActiveButton}
-    currentSearch = {currentSearch}
-    setCurrentSearch = {setCurrentSearch}
-    />;
+  return (
+    <Content
+      questions={questions}
+      answers={answers}
+      tags={tags}
+      users={users}
+      setQuestions={setQuestions}
+      setAnswers={setAnswers}
+      setTags={setTags}
+      setUsers={setUsers}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      activeTag={activeTag}
+      setActiveTag={setActiveTag}
+      activeQuestionQid={activeQuestionQid}
+      setActiveQuestionQid={setActiveQuestionQid}
+      activeButton={activeButton}
+      setActiveButton={setActiveButton}
+      currentSearch={currentSearch}
+      setCurrentSearch={setCurrentSearch}
+    />
+  );
 
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
     const [searchBarInput, setSearchBarInput] = useState("");
@@ -59,11 +78,42 @@ function FakeStackOverflowFunc() {
         setCurrentSearch(searchString);
       }
     }
+    const checkSession = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8000/api/checkSession"
+        ); // Send a request to the server to check the session status
+        const { loggedIn, user } = response.data;
+        if (loggedIn) {
+          // Session exists
+          // Perform any necessary actions based on the session, such as updating the UI or redirecting to a logged-in page
+          console.log("User:", user);
+        } else {
+          // No active session
+          // Perform any necessary actions for when there is no session, such as redirecting to the login page
+          console.log("No active session");
+        }
+      } catch (error) {
+        console.log("Session check error:", error);
+      }
+    };
 
-    function logOut(event){
-      //end user session
-      setActiveTab(5);
-    }
+const logOut = async () => {
+  try {
+    await axios.get("http://localhost:8000/api/checkSession");
+
+  } catch (error) {
+    console.log(error)
+  }
+  try {
+    await axios.post("http://localhost:8000/api/logout"); // Send a request to the server to logout
+    // Perform any necessary client-side cleanup, such as clearing local storage or resetting state
+    setActiveTab(5); // Set the active tab to the login page or another appropriate page
+    console.log("Logged out successfully")
+  } catch (error) {
+    console.log("Logout error:", error);
+  }
+};
 
     function handleInputChange(event) {
       setSearchBarInput(event.target.value);
@@ -78,10 +128,9 @@ function FakeStackOverflowFunc() {
       <header>
         <div className="topbar">
           <div>
-            <button
-              className="logoutBtn"
-              onClick={logOut}
-            >Log out</button>
+            <button className="logoutBtn" onClick={checkSession}>
+              Log out
+            </button>
           </div>
           <div className="brand-logo">
             <a href="/" className="brand-logo" onClick={handleLogoClick}>
@@ -103,25 +152,26 @@ function FakeStackOverflowFunc() {
       </header>
     );
   }
+
   function Content({
-    questions, 
-    answers, 
-    tags, 
-    users, 
-    setQuestions, 
-    setAnswers, 
-    setTags, 
-    setUsers, 
-    activeTab, 
-    setActiveTab, 
-    activeTag, 
-    setActiveTag, 
+    questions,
+    answers,
+    tags,
+    users,
+    setQuestions,
+    setAnswers,
+    setTags,
+    setUsers,
+    activeTab,
+    setActiveTab,
+    activeTag,
+    setActiveTag,
     activeQuestionQid,
     setActiveQuestionQid,
     activeButton,
     setActiveButton,
     currentSearch,
-    setCurrentSearch
+    setCurrentSearch,
   }) {
     const tabs = ["Questions", "Tags"];
 
@@ -191,19 +241,19 @@ function FakeStackOverflowFunc() {
               activeQuestionQid={activeQuestionQid}
             />
           );
-          //first page when entering application-welcome page
+        //first page when entering application-welcome page
         case 5:
           return (
             <WelcomePage
               setActiveTab={setActiveTab}
               questions={questions}
-              answers = {answers}
-              tags = {tags}
-              users = {users}
+              answers={answers}
+              tags={tags}
+              users={users}
               setQuestions={setQuestions}
-              setAnswers = {setAnswers}
-              setTags = {setTags}
-              setUsers = {setUsers}
+              setAnswers={setAnswers}
+              setTags={setTags}
+              setUsers={setUsers}
             />
           );
 
@@ -212,29 +262,21 @@ function FakeStackOverflowFunc() {
             <RegisterPage
               setActiveTab={setActiveTab}
               questions={questions}
-              answers = {answers}
-              tags = {tags}
-              users = {users}
+              answers={answers}
+              tags={tags}
+              users={users}
               setQuestions={setQuestions}
-              setAnswers = {setAnswers}
-              setTags = {setTags}
-              setUsers = {setUsers}
+              setAnswers={setAnswers}
+              setTags={setTags}
+              setUsers={setUsers}
             />
           );
 
         case 7:
-          return (
-            <LoginPage
-              setActiveTab={setActiveTab}
-            />
-          );
+          return <LoginPage setActiveTab={setActiveTab} />;
 
         default:
-          return (
-            <QuestionsPage
-              setActiveTab={setActiveTab}
-            />
-          );
+          return <QuestionsPage setActiveTab={setActiveTab} />;
       }
     };
     return (
@@ -274,20 +316,27 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function WelcomePage({setActiveTab}){
-    return(
+  function WelcomePage({ setActiveTab }) {
+    return (
       <div className="welcomeContainer">
         <div className="welcomeWindow">
           <div className="welcomeButton-container">
-            <button className="welcomeButton" onClick={() => setActiveTab(6)}>register as a new user</button>
-            <button className="welcomeButton" onClick={() => setActiveTab(7)}>login as existing user</button>
-            <button className="welcomeButton" onClick={() => setActiveTab(0)}>continue as guest</button>
+            <button className="welcomeButton" onClick={() => setActiveTab(6)}>
+              register as a new user
+            </button>
+            <button className="welcomeButton" onClick={() => setActiveTab(7)}>
+              login as existing user
+            </button>
+            <button className="welcomeButton" onClick={() => setActiveTab(0)}>
+              continue as guest
+            </button>
           </div>
         </div>
       </div>
-    )};
+    );
+  }
 
-  function RegisterPage({setActiveTab, users}){
+  function RegisterPage({ setActiveTab, users }) {
     const [password, setPassword] = useState("");
     const [passwordVerif, setPasswordVerif] = useState("");
     const [username, setUsername] = useState("");
@@ -297,35 +346,35 @@ function FakeStackOverflowFunc() {
     const [passwordError, setPasswordError] = useState(false);
     const [passwordVerifError, setPasswordVerifError] = useState(false);
 
-    function passwordValid(){
-      let email_id = email.split('@')[0];
-      if(password.includes(email_id) || password.includes(username)){
+    function passwordValid() {
+      let email_id = email.split("@")[0];
+      if (password.includes(email_id) || password.includes(username)) {
         return false;
       }
       return true;
-    };
+    }
 
-    function passwordVerified(){
-      if(passwordVerif !== password){
+    function passwordVerified() {
+      if (passwordVerif !== password) {
         return false;
       }
       return true;
-    };
+    }
 
-    function emailValid(){
-      const emails = users.map(user => user.email);
-      if (emails.includes(email)){
+    function emailValid() {
+      const emails = users.map((user) => user.email);
+      if (emails.includes(email)) {
         return false;
       }
       return true;
-    };
+    }
 
-    function usernameValid(){
-      if(username.length === 0){
+    function usernameValid() {
+      if (username.length === 0) {
         return false;
       }
       return true;
-    };
+    }
 
     const handleSubmit = async (event) => {
       event.preventDefault();
@@ -335,40 +384,48 @@ function FakeStackOverflowFunc() {
       setPasswordError(false);
       setPasswordVerifError(false);
 
-      if(!usernameValid()){
+      if (!usernameValid()) {
         setUsernameError(true);
         badInput = true;
       }
-      if(!emailValid()){
+      if (!emailValid()) {
         setEmailError(true);
         badInput = true;
       }
-      if(!passwordValid()){
+      if (!passwordValid()) {
         setPasswordError(true);
         badInput = true;
       }
-      if(!passwordVerified()){
+      if (!passwordVerified()) {
         setPasswordVerifError(true);
         badInput = true;
       }
-      if(!badInput){
-        let newUser = {
-          username: username,
-          email: email,
-          password: password,
-          admin: false
-        };
-        await addUser(newUser);
-        await getAllUsers();
-        setActiveTab(7);
+      if (!badInput) {
+        try {
+          const saltRounds = 10;
+          const hashedPassword = bcrypt.hashSync(password, saltRounds);
+
+          let newUser = {
+            username: username,
+            email: email,
+            password: hashedPassword,
+            admin: false,
+          };
+          console.log(newUser);
+
+          await addUser(newUser);
+          await getAllUsers();
+          setActiveTab(7);
+        } catch (error) {
+          console.log(error);
+        }
       }
     };
 
-    return(
+    return (
       <div className="registerContainer">
         <div className="registerWindow">
           <form className="registerQuestionForm" onSubmit={handleSubmit}>
-            
             <div id="registerUsername">
               <h2>Username</h2>
               <input
@@ -377,9 +434,11 @@ function FakeStackOverflowFunc() {
                 type="text"
                 onChange={(e) => setUsername(e.target.value)}
               />
-              {usernameError && <p style={{ color: "red" }}>Enter a valid username</p>}
+              {usernameError && (
+                <p style={{ color: "red" }}>Enter a valid username</p>
+              )}
             </div>
-            
+
             <div id="registerEmail">
               <h2>Email</h2>
               <input
@@ -388,7 +447,9 @@ function FakeStackOverflowFunc() {
                 type="text"
                 onChange={(e) => setEmail(e.target.value)}
               />
-              {emailError && <p style={{ color: "red" }}>Enter a valid email</p>}
+              {emailError && (
+                <p style={{ color: "red" }}>Enter a valid email</p>
+              )}
             </div>
 
             <div id="registerPassword">
@@ -396,10 +457,12 @@ function FakeStackOverflowFunc() {
               <input
                 className="registerFormInput"
                 id="registerPasswordInput"
-                type="text"
+                type="password"
                 onChange={(e) => setPassword(e.target.value)}
               ></input>
-              {passwordError && <p style={{ color: "red" }}>Enter a valid password</p>}
+              {passwordError && (
+                <p style={{ color: "red" }}>Enter a valid password</p>
+              )}
             </div>
 
             <div id="registerPassword2">
@@ -407,40 +470,32 @@ function FakeStackOverflowFunc() {
               <input
                 className="registerFormInput"
                 id="registerPasswordInput2"
-                type="text"
+                type="password"
                 onChange={(e) => setPasswordVerif(e.target.value)}
               ></input>
-              {passwordVerifError && <p style={{ color: "red" }}>Passwords must match exactly</p>}
+              {passwordVerifError && (
+                <p style={{ color: "red" }}>Passwords must match exactly</p>
+              )}
             </div>
 
             <div className="formBottom">
               <input id="registerUserBtn" type="submit" value="Sign up" />
             </div>
-
           </form>
-          
         </div>
       </div>
-    )
-  };
+    );
+  }
 
-  function LoginPage({setActiveTab}){
+  function LoginPage({ setActiveTab }) {
     const [password, setPassword] = useState("");
     const [email, setEmail] = useState("");
     const [emailError, setEmailError] = useState(false);
     const [passwordError, setPasswordError] = useState(false);
 
-    function passwordValid(){
-      const matchingUser = users.filter(user => user.email === email);
-      if (matchingUser.length === 0 || matchingUser[0].password === password){
-        return true;
-      }
-      return false;
-    }
-
-    function emailValid(){
-      const emails = users.map(user => user.email);
-      if(emails.includes(email)){
+    function emailValid() {
+      const emails = users.map((user) => user.email);
+      if (emails.includes(email)) {
         return true;
       }
       return false;
@@ -453,25 +508,39 @@ function FakeStackOverflowFunc() {
       setEmailError(false);
       setPasswordError(false);
 
-      if(!emailValid()){
+      if (!emailValid()) {
         setEmailError(true);
         badInput = true;
       }
-      if(!passwordValid()){
-        setPasswordError(true);
-        badInput = true;
+      if (!badInput) {
+        const matchingUser = users.find((user) => user.email === email);
+        try {
+          const passwordMatch = await bcrypt.compare(
+            password,
+            matchingUser.password
+          );
+          if (passwordMatch) {
+            console.log("Password matched");
+            const response = await axios.post(
+              "http://localhost:8000/api/startSession",
+              matchingUser
+            );
+            console.log(response)
+            setActiveTab(0);
+          } else {
+            console.log("Invalid password");
+            setPasswordError(true);
+          }
+        } catch (error) {
+          console.log(error);
+        }
       }
-      if(!badInput){
-        //log user in using a session ?
-        setActiveTab(0);
-      }
-    }
+    };
 
-    return(
+    return (
       <div className="loginContainer">
         <div className="loginWindow">
           <form className="loginQuestionForm" onSubmit={handleSubmit}>
-            
             <div id="loginEmail">
               <h2>Email</h2>
               <input
@@ -480,7 +549,9 @@ function FakeStackOverflowFunc() {
                 type="text"
                 onChange={(e) => setEmail(e.target.value)}
               />
-              {emailError && <p style={{ color: "red" }}>Enter a valid email</p>}
+              {emailError && (
+                <p style={{ color: "red" }}>Enter a valid email</p>
+              )}
             </div>
 
             <div id="loginPassword">
@@ -488,10 +559,12 @@ function FakeStackOverflowFunc() {
               <input
                 className="loginFormInput"
                 id="loginPasswordInput"
-                type="text"
+                type="password"
                 onChange={(e) => setPassword(e.target.value)}
               ></input>
-              {passwordError && <p style={{ color: "red" }}>Enter a valid password</p>}
+              {passwordError && (
+                <p style={{ color: "red" }}>Enter a valid password</p>
+              )}
             </div>
 
             <div className="formBottom">
@@ -500,8 +573,7 @@ function FakeStackOverflowFunc() {
           </form>
         </div>
       </div>
-    )
-    
+    );
   }
 
   function AnsQuestionPage({
@@ -553,9 +625,9 @@ function FakeStackOverflowFunc() {
           text: tempText,
           ans_by: users[0],
           ans_date_time: date,
-          comments: []
+          comments: [],
         };
-        await addAnswer(newAns);  //add new answer object to database
+        await addAnswer(newAns); //add new answer object to database
         let allAnswers = await getAllAnswers();
 
         //add new answer object to associatd question's answers field
@@ -569,7 +641,6 @@ function FakeStackOverflowFunc() {
 
     return (
       <form className="ansQuestionForm" onSubmit={handleSubmit}>
-
         <div id="answerText">
           <h2>Answer Text*</h2>
           <p>
@@ -606,7 +677,7 @@ function FakeStackOverflowFunc() {
 
     const handleTagClick = (event) => {
       event.preventDefault();
-      setActiveTag(event.target.id);  //id refers to html id of object, not the tid.
+      setActiveTag(event.target.id); //id refers to html id of object, not the tid.
       setActiveTab(0);
       setActiveButton(3);
     };
@@ -716,7 +787,7 @@ function FakeStackOverflowFunc() {
     const [summaryError, setSummaryError] = useState(false);
     const [hyperlinkError, setHyperlinkError] = useState(false);
     let tagCount = tags.length;
-    
+
     const handleSubmit = async (event) => {
       event.preventDefault();
 
@@ -762,7 +833,11 @@ function FakeStackOverflowFunc() {
         badInput = true;
       }
 
-      if (newQuestionTags === "" || newQuestionTags.length === 0 || numWords(newQuestionTags) > 5) {
+      if (
+        newQuestionTags === "" ||
+        newQuestionTags.length === 0 ||
+        numWords(newQuestionTags) > 5
+      ) {
         badInput = true;
         setTagsError(true);
       } else {
@@ -777,29 +852,29 @@ function FakeStackOverflowFunc() {
       if (!badInput) {
         // turn tags into tag ids
         let incomingTags = newQuestionTags.split(/\s/);
-        let tagNames = tags.map(tag => tag.name)
-        const newTags = incomingTags.filter(name => !tagNames.includes(name));
+        let tagNames = tags.map((tag) => tag.name);
+        const newTags = incomingTags.filter((name) => !tagNames.includes(name));
 
-        for(let i = 0; i < newTags.length; i++){
+        for (let i = 0; i < newTags.length; i++) {
           await addTag(newTags[i], tagCount);
-          tagCount +=1;
+          tagCount += 1;
         }
         let allTags = await getAllTags();
-        
+
         let date = new Date(Date.now());
         const qstnTags = convertTagNamesTo_Ids(allTags, incomingTags);
 
-        let qstn = {  
-        qid: "q" + (questions.length + 1),
-        title: title,
-        summary: summary,
-        text: tempText,
-        tags: qstnTags,
-        comments: [],
-        answers: [],
-        asked_by: users[0], //change to grabbing user from session id
-        ask_date_time: date,
-        views: 0,
+        let qstn = {
+          qid: "q" + (questions.length + 1),
+          title: title,
+          summary: summary,
+          text: tempText,
+          tags: qstnTags,
+          comments: [],
+          answers: [],
+          asked_by: users[0], //change to grabbing user from session id
+          ask_date_time: date,
+          views: 0,
         };
 
         addQuestion(qstn);
@@ -843,9 +918,7 @@ function FakeStackOverflowFunc() {
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
           />
-          {summaryError && (
-            <p style={{ color: "red" }}>Summary is too long</p>
-          )}
+          {summaryError && <p style={{ color: "red" }}>Summary is too long</p>}
         </div>
 
         <div id="questionText">
@@ -889,15 +962,17 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function AnswersPage({setActiveTab, activeQuestionQid }) {
+  function AnswersPage({ setActiveTab, activeQuestionQid }) {
     const question = getQuestionById(activeQuestionQid);
     let currAnswers = [];
-    for (let i = 0; i < question.answers.length; i++){
+    for (let i = 0; i < question.answers.length; i++) {
       currAnswers.push(getAnswerBy_Id(question.answers[i]));
     }
 
     const currQstnComments = [...question.comments];
-    const qstnComments = comments.filter(comment => currQstnComments.includes(comment._id));
+    const qstnComments = comments.filter((comment) =>
+      currQstnComments.includes(comment._id)
+    );
 
     sortAnsByDate(currAnswers);
     console.log(qstnComments);
@@ -906,12 +981,8 @@ function FakeStackOverflowFunc() {
       setActiveTab(4);
     }
 
-    function handleUpvote(){
-
-    }
-    function handleDownvote(){
-
-    }
+    function handleUpvote() {}
+    function handleDownvote() {}
 
     return (
       <div id="answerPage">
@@ -939,29 +1010,31 @@ function FakeStackOverflowFunc() {
             ></div>
             <div className="qAskedBy">
               <span id="userAnsrPage">{question.asked_by}</span>
-              <span id="dateAnsrPage">
-                {formattedDateOfQstn(question)}
-              </span>
+              <span id="dateAnsrPage">{formattedDateOfQstn(question)}</span>
             </div>
           </div>
 
           <div className="aPageHeader-3">
             <div className="comments-section">
               {qstnComments.map((comment, index) => (
-              <div className="comment-box" key = {index}>
-                <div className="vote-section">
-                  <div className="vote-button-container">
-                    <button className="vote-button" onClick={handleUpvote}>upvote</button>
-                    <span className = "vote-count"> {comment.votes} </span>
-                    <button className="vote-button" onClick = {handleDownvote}>downvote</button>
+                <div className="comment-box" key={index}>
+                  <div className="vote-section">
+                    <div className="vote-button-container">
+                      <button className="vote-button" onClick={handleUpvote}>
+                        upvote
+                      </button>
+                      <span className="vote-count"> {comment.votes} </span>
+                      <button className="vote-button" onClick={handleDownvote}>
+                        downvote
+                      </button>
+                    </div>
+                    <span className="comment-text">{comment.text}</span>
                   </div>
-                  <span className="comment-text">{comment.text}</span>
                 </div>
-              </div>
               ))}
             </div>
+          </div>
         </div>
-      </div>
 
         <div id="aPageAnswers">
           {currAnswers.map((answer, index) => (
@@ -983,7 +1056,7 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function TagsPage({setActiveTab, setActiveTag, setActiveButton }) {
+  function TagsPage({ setActiveTab, setActiveTag, setActiveButton }) {
     const currTags = [...tags];
     const handleTagClick = (event) => {
       event.preventDefault();
@@ -997,7 +1070,11 @@ function FakeStackOverflowFunc() {
         <div id="tagHeaderContainer">
           <h3>{currTags.length} Tags</h3>
           <h3>All Tags</h3>
-          <button type="button" id="askQuestionBtnInTag" onClick = {() => setActiveTab(2)}>
+          <button
+            type="button"
+            id="askQuestionBtnInTag"
+            onClick={() => setActiveTab(2)}
+          >
             {" "}
             Ask Question{" "}
           </button>
@@ -1020,7 +1097,7 @@ function FakeStackOverflowFunc() {
     );
   }
 
-  function displaySameTagQuestions(activeTag){
+  function displaySameTagQuestions(activeTag) {
     const currTag = getTagByTid(activeTag);
     const currQuestions = [];
     for (let i = 0; i < questions.length; i++) {
@@ -1118,72 +1195,75 @@ function FakeStackOverflowFunc() {
     return -1;
   }
 
-  async function getAllTags(){
+  async function getAllTags() {
     let tagData;
-    await axios.get("http://localhost:8000/api/allTags")
-    .then(function(res) {
-      setTags(res.data);
-      tagData = res.data
+    await axios
+      .get("http://localhost:8000/api/allTags")
+      .then(function (res) {
+        setTags(res.data);
+        tagData = res.data;
       })
-      .catch(err=>{
+      .catch((err) => {
         console.log(err);
       });
-      return tagData;
+    return tagData;
   }
 
-  async function getAllQuestions(){
+  async function getAllQuestions() {
     let questionData;
-    await axios.get("http://localhost:8000/api/allQuestions")
-    .then(function(res) {
-      setQuestions(res.data);
-      questionData = res.data
+    await axios
+      .get("http://localhost:8000/api/allQuestions")
+      .then(function (res) {
+        setQuestions(res.data);
+        questionData = res.data;
       })
-      .catch(err=>{
+      .catch((err) => {
         console.log(err);
       });
-      return questionData;
+    return questionData;
   }
 
-  async function getAllAnswers(){
+  async function getAllAnswers() {
     let answerData;
-    await axios.get("http://localhost:8000/api/allAnswers")
-    .then(function(res) {
-      setAnswers(res.data);
-      answerData = res.data
+    await axios
+      .get("http://localhost:8000/api/allAnswers")
+      .then(function (res) {
+        setAnswers(res.data);
+        answerData = res.data;
       })
-      .catch(err=>{
+      .catch((err) => {
         console.log(err);
       });
-      return answerData;
+    return answerData;
   }
 
-  async function getAllUsers(){
+  async function getAllUsers() {
     let userData;
-    await axios.get("http://localhost:8000/api/allUsers")
-    .then(function(res) {
-      setUsers(res.data);
-      userData = res.data
+    await axios
+      .get("http://localhost:8000/api/allUsers")
+      .then(function (res) {
+        setUsers(res.data);
+        userData = res.data;
       })
-      .catch(err=>{
+      .catch((err) => {
         console.log(err);
       });
-      return userData;
+    return userData;
   }
 
-  async function getAllComments(){
+  async function getAllComments() {
     let commentData;
-    await axios.get("http://localhost:8000/api/allComments")
-    .then(function(res) {
-      setComments(res.data);
-      commentData = res.data
+    await axios
+      .get("http://localhost:8000/api/allComments")
+      .then(function (res) {
+        setComments(res.data);
+        commentData = res.data;
       })
-      .catch(err=>{
+      .catch((err) => {
         console.log(err);
       });
-      return commentData;
+    return commentData;
   }
-
-
 
   function formattedDateOfQstn(qstn) {
     const currentDateTime = Date.now() / 1000;
@@ -1280,9 +1360,8 @@ function FakeStackOverflowFunc() {
           if (
             question.tags.some(
               (_id) =>
-                tags
-                  .find((tag) => tag._id === _id)
-                  .name.toLowerCase() === tagName.toLowerCase()
+                tags.find((tag) => tag._id === _id).name.toLowerCase() ===
+                tagName.toLowerCase()
             )
           ) {
             matchFound = true;
@@ -1301,7 +1380,8 @@ function FakeStackOverflowFunc() {
     ansArr.sort((a, b) => new Date(b.ansDate) - new Date(a.ansDate));
   }
 
-  function getAnswerBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+  function getAnswerBy_Id(_id) {
+    // gets answer by the _id field in answers, not the aid field
     const currAnswers = [...answers];
     for (let i = 0; i < currAnswers.length; i++) {
       if (currAnswers[i]._id === _id) {
@@ -1311,16 +1391,17 @@ function FakeStackOverflowFunc() {
     return -1;
   }
 
-  function getTag_IdByName(allTags, tagName){
-    for(const tag of allTags){
-      if(tag.name === tagName){
+  function getTag_IdByName(allTags, tagName) {
+    for (const tag of allTags) {
+      if (tag.name === tagName) {
         return tag._id;
       }
     }
     return -1;
   }
 
-  function getTagByTid(tid) {  // gets answer by the _id field in answers, not the aid field
+  function getTagByTid(tid) {
+    // gets answer by the _id field in answers, not the aid field
     const currTags = [...tags];
     for (let i = 0; i < currTags.length; i++) {
       if (currTags[i].tid === tid) {
@@ -1340,94 +1421,126 @@ function FakeStackOverflowFunc() {
     return count++;
   }
 
-  function numWords(str){
+  function numWords(str) {
     return str.split(/\s+/).length;
   }
 
-  function convertTagNamesTo_Ids(allTags, tagNames){
+  function convertTagNamesTo_Ids(allTags, tagNames) {
     const newTags = [];
-    for (let i = 0; i < tagNames.length; i++){
+    for (let i = 0; i < tagNames.length; i++) {
       newTags[i] = getTag_IdByName(allTags, tagNames[i]);
     }
     return newTags;
   }
 
-  function convertAidtoAns_Id(allAnswers, newAid){
-    for(let i = 0; i < allAnswers.length; i++){
-      if(allAnswers[i].aid === newAid){
+  function convertAidtoAns_Id(allAnswers, newAid) {
+    for (let i = 0; i < allAnswers.length; i++) {
+      if (allAnswers[i].aid === newAid) {
         return allAnswers[i]._id;
       }
     }
     return -1;
   }
-  
-  async function addTag(tagName, tagCount){
+
+  async function addTag(tagName, tagCount) {
     let newTagId = "t" + (tagCount + 1);
-    
-    await axios.post("http://localhost:8000/api/addTag", {tid: newTagId, name: tagName})
-    .then(response => {console.log(response)})
-    .catch(error => {console.log(error)})
+
+    await axios
+      .post("http://localhost:8000/api/addTag", {
+        tid: newTagId,
+        name: tagName,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
-  async function addAnswer(answer){
-    await axios.post("http://localhost:8000/api/addAnswer",
-      {
-      aid: answer.aid,
-      text: answer.text,
-      ans_by: answer.ans_by,
-      ans_date_time: answer.ans_date_time,
-      comments: answer.comments
-    })
-    .then(response => {console.log(response)})
-    .catch(error => {console.log(error)})
+  async function addAnswer(answer) {
+    await axios
+      .post("http://localhost:8000/api/addAnswer", {
+        aid: answer.aid,
+        text: answer.text,
+        ans_by: answer.ans_by,
+        ans_date_time: answer.ans_date_time,
+        comments: answer.comments,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
-  async function addQuestion(q){
-    await axios.post("http://localhost:8000/api/addQuestion",
-      {qid: q.qid, 
-      title: q.title,
-      summary: q.summary, 
-      text: q.text, 
-      tags: q.tags, 
-      comments: q.comments,
-      answers: q.answers, 
-      asked_by: q.asked_by, 
-      ask_date_time: q.ask_date_time, 
-      views: q.views
-    })
-    .then(response => {console.log(response)})
-    .catch(error => {console.log(error)})
+  async function addQuestion(q) {
+    await axios
+      .post("http://localhost:8000/api/addQuestion", {
+        qid: q.qid,
+        title: q.title,
+        summary: q.summary,
+        text: q.text,
+        tags: q.tags,
+        comments: q.comments,
+        answers: q.answers,
+        asked_by: q.asked_by,
+        ask_date_time: q.ask_date_time,
+        views: q.views,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
     await getAllQuestions();
   }
 
-  async function addUser(user){
-    await axios.post("http://localhost:8000/api/addUser",
-      {
-      username: user.username,
-      email: user.email,
-      password: user.password,
-      admin: user.admin,
-    })
-    .then(response => {console.log(response)})
-    .catch(error => {console.log(error)})
+  async function addUser(user) {
+    await axios
+      .post("http://localhost:8000/api/addUser", {
+        username: user.username,
+        email: user.email,
+        password: user.password,
+        admin: user.admin,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
-  async function addComment(comment){
-    await axios.post("http://localhost:8000/api/addComment",
-      {
-      text: comment.text,
-      com_date_time: comment.com_date_time,
-      comment_by: comment.comment_by,
-    })
-    .then(response => {console.log(response)})
-    .catch(error => {console.log(error)})
+  async function addComment(comment) {
+    await axios
+      .post("http://localhost:8000/api/addComment", {
+        text: comment.text,
+        com_date_time: comment.com_date_time,
+        comment_by: comment.comment_by,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
-  async function addAnswerToExistingQuestion(activeQid, newAns_Id){
-    await axios.post("http://localhost:8000/api/addAnswerToExistingQuestion",
-     {activeQid: activeQid, newAns_Id: newAns_Id})
-    .then(response => {console.log(response)})
-    .catch(error => {console.log(error)})
+  async function addAnswerToExistingQuestion(activeQid, newAns_Id) {
+    await axios
+      .post("http://localhost:8000/api/addAnswerToExistingQuestion", {
+        activeQid: activeQid,
+        newAns_Id: newAns_Id,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
     await getAllQuestions();
   }
 }
