@@ -5,30 +5,35 @@ const express = require("express");
 const path = require("path");
 const rootDir = path.dirname(__dirname);
 const serverPort = 8000;
-var cors = require("cors");
+const cors = require("cors");
 const app = express();
 const { ObjectId } = require("mongodb");
-const cookieParser = require("cookie-parser");
 const sessions = require("express-session");
 
 app.use(express.static(rootDir + "/client/public"));
-
-app.use(cors());
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use(cookieParser());
 
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(
   sessions({
     secret: "thisismysecrctekeyfhrgfgrfrty84fwir767",
     saveUninitialized: true,
-    cookie: { maxAge: oneDay },
-    resave: false,
+    cookie: {
+      /*maxAge: oneDay,*/
+      httpOnly: true,
+    },
+    resave: true,
   })
 );
+
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Replace with the actual origin of your client application
+    credentials: true,
+  })
+);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.listen(serverPort, "localhost", () => {
   console.log("listening on port 8000");
@@ -59,7 +64,151 @@ process.on("SIGINT", () => {
   console.log("process terminated");
   process.exit();
 });
+/* UPVOTE & DOWNVOTES */
+app.post("/api/questions/:questionId/upvote", async (req, res) => {
+  const { questionId } = req.params;
+  const { userId } = req.body;
 
+  try {
+    const question = await Question.findOneAndUpdate(
+      { _id: questionId },
+      { $addToSet: { upvotes: userId } },
+      { new: true }
+    );
+
+    if (!question) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    // Check if the user already upvoted
+    if (question.upvotes.includes(userId)) {
+      return res
+        .status(400)
+        .json({ message: "User already upvoted this question" });
+    }
+
+    res.json({ message: "Question upvoted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/api/questions/:questionId/downvote", async (req, res) => {
+  const { questionId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const question = await Question.findById(questionId);
+    if (!question) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    // Check if the user already downvoted
+    if (question.downvotes.includes(userId)) {
+      return res
+        .status(400)
+        .json({ message: "User already downvoted this question" });
+    }
+
+    question.downvotes.push(userId);
+    await question.save();
+
+    res.json({ message: "Question downvoted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/api/questions/:questionId/removeUpvote", async (req, res) => {
+  const { questionId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const question = await Question.findById(questionId);
+    if (!question) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    const index = question.upvotes.indexOf(userId);
+    if (index === -1) {
+      return res
+        .status(400)
+        .json({ message: "User has not upvoted this question" });
+    }
+
+    question.upvotes.splice(index, 1);
+    await question.save();
+
+    res.json({ message: "Upvote removed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/api/questions/:questionId/removeDownvote", async (req, res) => {
+  const { questionId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const question = await Question.findById(questionId);
+    if (!question) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    const index = question.downvotes.indexOf(userId);
+    if (index === -1) {
+      return res
+        .status(400)
+        .json({ message: "User has not downvoted this question" });
+    }
+
+    question.downvotes.splice(index, 1);
+    await question.save();
+
+    res.json({ message: "Downvote removed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/* USER SESSIONS */
+app.post("/api/startSession", (req, res) => {
+  req.session.user = req.body; // Store the user data in the session
+  res.json({ loggedIn: true, message: "Session started successfully", user: req.session.user});
+});
+
+app.post("/api/logout", (req, res) => {
+  req.session.destroy(); // Clear the session data
+  res.json({ loggedIn: false, message: "Logout successful" });
+});
+
+app.get("/api/checkSession", (req, res) => {
+  if (req.session.user) {
+    // Session exists
+    res.json({ loggedIn: true, user: req.session.user });
+  } else {
+    // No active session
+    res.json({ loggedIn: false });
+  }
+});
+
+/* INCREMENT VIEW COUNT*/
+app.patch("/api/incrementViewCount/:qid", async (req, res) => {
+  const { qid } = req.params;
+  try {
+    const question = await Question.findOne({ qid });
+    if (!question) {
+      return res.status(404).json({ error: "Question not found" });
+    }
+    question.views++;
+    await question.save();
+    res.status(200).json({ message: "View count incremented successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* GET ALL FUNCTIONS */
 app.get("/api/allUsers", async (req, res) => {
   await User.find()
     .then((docs) => {
@@ -110,27 +259,7 @@ app.get("/api/allComments", async (req, res) => {
     });
 });
 
-// USER SESSIONS
-app.post("/api/startSession", (req, res) => {
-  req.session.user = req.body; // Store the user data in the session
-  res.json({ loggedIn: true, message: "Session started successfully", user: req.session.user});
-});
-
-app.post("/api/logout", (req, res) => {
-  req.session.destroy(); // Clear the session data
-  res.json({ loggedIn: false, message: "Logout successful" });
-});
-
-app.get("/api/checkSession", (req, res) => {
-  if (req.session.user) {
-    // Session exists
-    res.json({ loggedIn: true, user: req.session.user });
-  } else {
-    // No active session
-    res.json({ loggedIn: false });
-  }
-});
-
+/* POST NEW FUNCTIONS */
 app.post("/api/addUser", async (req, res) => {
   const { username, email, password, admin } = req.body;
   const newUser = new User({

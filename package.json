@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "crypto-browserify": "^3.12.0"
+  }
+}
