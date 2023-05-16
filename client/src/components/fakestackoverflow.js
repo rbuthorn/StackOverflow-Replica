@@ -64,7 +64,7 @@ function FakeStackOverflowFunc() {
             withCredentials: true,
           }
         );
-
+        setActiveUser(null);
         console.log(response.data.message);
       } catch (error) {
         console.log("Logout error:", error);
@@ -75,11 +75,11 @@ function FakeStackOverflowFunc() {
       //console.log(users[0].username)
       //console.log(await getAllQuestions());
       //console.log(await activeSession())
-      /*if (activeUser) {
+      if (activeUser) {
         console.log(activeUser)
       } else {
-        console.log("no")
-      }*/
+        console.log("no active user")
+      }
       /*console.log(
         await getAllTags().then((tags) =>
           tags.map((tag) => console.log("tag" + tag._id))
@@ -524,6 +524,7 @@ function FakeStackOverflowFunc() {
               }
             );
             console.log(response);
+            setActiveUser(response.data.user)
             setActiveTab(0);
           } else {
             console.log("Invalid password");
@@ -618,10 +619,11 @@ function FakeStackOverflowFunc() {
       if (!badInput) {
         const newAid = "a" + (answers.length + 1);
         let date = new Date(Date.now());
+        console.log(activeUser)
         const newAns = {
           aid: newAid,
           text: tempText,
-          ans_by: users[0],
+          ans_by: activeUser.username,
           ans_date_time: date,
           comments: [],
           upvotes: 0,
@@ -685,13 +687,13 @@ function FakeStackOverflowFunc() {
         <div id="homePage">
           <div id="firstPortionOfHomePage">
             <h1 id="questionOrSearch">All Questions</h1>
-            <button
+            {activeUser && <button
               type="button"
               id="askQuestionBtn"
               onClick={() => setActiveTab(2)}
             >
               Ask Question
-            </button>
+            </button>}
           </div>
           <div id="secondPortionOfHomePage">
             <span id="numQuestionsPart">{currQuestions.length} questions</span>
@@ -991,28 +993,61 @@ function FakeStackOverflowFunc() {
         <div className="aPageHeader">
           <div className="aPageHeader-1">
             <h3 id="numAnswers">{question.answers.length} answers</h3>
+            <div className="numViewsContainer">
+              <h3 id="numViews">{question.views} views</h3>
+            </div>
             <h3 id="qTitle">{question.title}</h3>
-            <button
-              type="button"
-              id="askQuestionBtnAnsrPage"
-              onClick={() => setActiveTab(2)}
-            >
-              {" "}
-              Ask Question{" "}
-            </button>
+            {activeUser && (
+              <button
+                type="button"
+                id="askQuestionBtnAnsrPage"
+                onClick={() => setActiveTab(2)}
+              >
+                {" "}
+                Ask Question{" "}
+              </button>
+            )}
+            {!activeUser && (
+              <button
+                type="button"
+                id="askQuestionBtnAnsrPage"
+                onClick={() => setActiveTab(2)}
+                style={{ visibility: "hidden" }}
+              >
+                Ask Question
+              </button>
+            )}
           </div>
 
           <div className="aPageHeader-2">
-            <div className="numViewsContainer">
-              <h3 id="numViews">{question.views} views</h3>
+            <div className="qVotes">
+              <button
+                type="button"
+                className="qUpvote"
+                onClick={() => upvoteQuestion(question._id)}
+              >
+                upvote
+              </button>
+              <h3 id="qNumVotes">
+                {question.upvotes.length - question.downvotes.length}
+              </h3>
+              <button
+                type="button"
+                className="qDownvote"
+                onClick={() => downvoteQuestion(question._id)}
+              >
+                downvote
+              </button>
             </div>
             <div
               id="qText"
               dangerouslySetInnerHTML={{ __html: question.text }}
             ></div>
             <div className="qAskedBy">
-              <span id="userAnsrPage">{console.log(question.asked_by)}</span>
-              <span id="dateAnsrPage">{formattedDateOfQstn(question)}</span>
+              <span id="userAnsrPage">{question.asked_by}</span>
+              <span id="dateAnsrPage">
+                asked {formattedDateOfQstn(question)}
+              </span>
             </div>
           </div>
 
@@ -1043,23 +1078,27 @@ function FakeStackOverflowFunc() {
             <div className="aPageAnswer" key={index}>
               <p className="aPageText">{answer.text}</p>
               <div className="aPageAskedBy">
-                <span className="userAnsrPage">{yay(answer)}</span>
+                <span className="userAnsrPage">{answer.ans_by}</span>
                 <span className="dateAnsrPage">
-                  {formattedDateOfAns(answer)}
+                  answered {formattedDateOfAns(answer)}
                 </span>
               </div>
             </div>
           ))}
         </div>
-        <button id="answerQuestion" onClick={handleAnsQues}>
-          Answer Question
-        </button>
+        {activeUser && (
+          <button id="answerQuestion" onClick={handleAnsQues}>
+            Answer Question
+          </button>
+        )}
       </div>
     );
   }
   function yay(yay) {
-    console.log(yay);
-    //return yay;
+    console.log(answers)
+    /*for (let answer in answers) {
+      console.log(answer)
+    }*/
   }
 
   function TagsPage({ setActiveTab, setActiveTag, setActiveButton }) {
@@ -1076,14 +1115,26 @@ function FakeStackOverflowFunc() {
         <div id="tagHeaderContainer">
           <h3>{currTags.length} Tags</h3>
           <h3>All Tags</h3>
-          <button
-            type="button"
-            id="askQuestionBtnInTag"
-            onClick={() => setActiveTab(2)}
-          >
-            {" "}
-            Ask Question{" "}
-          </button>
+          {activeUser && (
+            <button
+              type="button"
+              id="askQuestionBtnInTag"
+              onClick={() => setActiveTab(2)}
+            >
+              {" "}
+              Ask Question{" "}
+            </button>
+          )}
+          {!activeUser && (
+            <button
+              type="button"
+              id="askQuestionBtnInTag"
+              onClick={() => setActiveTab(2)}
+              style={{ visibility: "hidden" }}
+            >
+              Ask Question
+            </button>
+          )}
         </div>
         <div id="tagContainer">
           {currTags.map((tag) => (
@@ -1229,11 +1280,28 @@ function FakeStackOverflowFunc() {
     return questionData;
   }
 
+  async function getAllAnswers() {
+    let answerData;
+    await axios
+      .get("http://localhost:8000/api/allAnswers")
+      .then(function (res) {
+        setAnswers(res.data);
+        answerData = res.data;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    return answerData;
+  }
+
   async function upvoteQuestion(questionId) {
     try {
-      const response = await axios.post(`/api/questions/${questionId}/upvote`, {
-        userId: "currentUserId", // Replace 'currentUserId' with the actual user ID
-      });
+      const response = await axios.post(
+        `http://localhost:8000/api/questions/${questionId}/upvote`,
+        {
+          userId: activeUser.email, // Replace 'currentUserId' with the actual user ID
+        }
+      );
       console.log(response.data.message);
       // Update the question's upvote count or any other UI changes
     } catch (error) {
@@ -1245,9 +1313,9 @@ function FakeStackOverflowFunc() {
   async function downvoteQuestion(questionId) {
     try {
       const response = await axios.post(
-        `/api/questions/${questionId}/downvote`,
+        `http://localhost:8000/api/questions/${questionId}/downvote`,
         {
-          userId: "currentUserId", // Replace 'currentUserId' with the actual user ID
+          userId: activeUser.email, // Replace 'currentUserId' with the actual user ID
         }
       );
       console.log(response.data.message);
@@ -1302,20 +1370,6 @@ function FakeStackOverflowFunc() {
     }
   }
 
-  async function getAllAnswers() {
-    let answerData;
-    await axios
-      .get("http://localhost:8000/api/allAnswers")
-      .then(function (res) {
-        setAnswers(res.data);
-        answerData = res.data;
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-    return answerData;
-  }
-
   async function getAllUsers() {
     let userData;
     await axios
@@ -1351,7 +1405,7 @@ function FakeStackOverflowFunc() {
       })
       .then((res) => {
         console.log(res.data.user.username);
-        setActiveUser(res.data.user.username);
+        setActiveUser(res.data.user);
         return res.data.loggedIn;
       })
       .catch((err) => {
