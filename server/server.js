@@ -70,7 +70,12 @@ app.post("/api/questions/:questionId/upvote", async (req, res) => {
   const { userId } = req.body;
 
   try {
-    const question = await Question.findById(questionId);
+    const question = await Question.findOneAndUpdate(
+      { _id: questionId },
+      { $addToSet: { upvotes: userId } },
+      { new: true }
+    );
+
     if (!question) {
       return res.status(404).json({ message: "Question not found" });
     }
@@ -81,9 +86,6 @@ app.post("/api/questions/:questionId/upvote", async (req, res) => {
         .status(400)
         .json({ message: "User already upvoted this question" });
     }
-
-    question.upvotes.push(userId);
-    await question.save();
 
     res.json({ message: "Question upvoted successfully" });
   } catch (error) {
@@ -173,9 +175,6 @@ app.post("/api/questions/:questionId/removeDownvote", async (req, res) => {
 app.post("/api/startSession", (req, res) => {
   req.session.user = req.body; // Store the user data in the session
   res.json({ loggedIn: true, message: "Session started successfully", user: req.session.user});
-  console.log("REQ SESSION BODY");
-  console.log(req.session.user);
-  console.log(req.body === req.session.user);
 });
 
 app.post("/api/logout", (req, res) => {
