@@ -19,22 +19,7 @@ function FakeStackOverflowFunc() {
   const [activeQuestionQid, setActiveQuestionQid] = useState(null);
   const [activeButton, setActiveButton] = useState(0);
   const [currentSearch, setCurrentSearch] = useState(null);
-  /*const startSession = (user) => {
-    fetch("/api/startSession", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(user),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Session started:", data);
-      })
-      .catch((error) => {
-        console.log("Error starting session:", error);
-      });
-  };*/
+  const [activeUser, setActiveUser] = useState(null);
 
   useEffect(() => {
     getAllAnswers();
@@ -70,65 +55,75 @@ function FakeStackOverflowFunc() {
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
     const [searchBarInput, setSearchBarInput] = useState("");
 
-    function handleSearch(event) {
+    const logout = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:8000/api/logout",
+          null,
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log(response.data.message);
+      } catch (error) {
+        console.log("Logout error:", error);
+      }
+    };
+
+    const questions = async () => {
+      //console.log(users[0].username)
+      //console.log(await getAllQuestions());
+      //console.log(await activeSession())
+      /*if (activeUser) {
+        console.log(activeUser)
+      } else {
+        console.log("no")
+      }*/
+      /*console.log(
+        await getAllTags().then((tags) =>
+          tags.map((tag) => console.log("tag" + tag._id))
+        )
+      );
+      console.log(
+        await getAllQuestions().then((questions) =>
+          questions[0].tags.map((tid) => {
+            const matchingTag = tags.find((tag) => tag._id === tid);
+            console.log("matching tag " + matchingTag.name);
+          })
+        )
+      );*/
+      /*.tags.map((tid) => {
+        const matchingTag = tags.find((tag) => tag.id === tid);
+        const tagName = matchingTag ? matchingTag.name : "";
+        console.log(tagName);
+      });*/
+    };
+
+    const handleSearch = (event) => {
       if (event.key === "Enter") {
         const searchString = searchBarInput;
         setActiveButton(4);
         setActiveTab(0);
         setCurrentSearch(searchString);
       }
-    }
-    const checkSession = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:8000/api/checkSession"
-        ); // Send a request to the server to check the session status
-        const { loggedIn, user } = response.data;
-        if (loggedIn) {
-          // Session exists
-          // Perform any necessary actions based on the session, such as updating the UI or redirecting to a logged-in page
-          console.log("User:", user);
-        } else {
-          // No active session
-          // Perform any necessary actions for when there is no session, such as redirecting to the login page
-          console.log("No active session");
-        }
-      } catch (error) {
-        console.log("Session check error:", error);
-      }
     };
 
-const logOut = async () => {
-  try {
-    await axios.get("http://localhost:8000/api/checkSession");
-
-  } catch (error) {
-    console.log(error)
-  }
-  try {
-    await axios.post("http://localhost:8000/api/logout"); // Send a request to the server to logout
-    // Perform any necessary client-side cleanup, such as clearing local storage or resetting state
-    setActiveTab(5); // Set the active tab to the login page or another appropriate page
-    console.log("Logged out successfully")
-  } catch (error) {
-    console.log("Logout error:", error);
-  }
-};
-
-    function handleInputChange(event) {
+    const handleInputChange = (event) => {
       setSearchBarInput(event.target.value);
-    }
+    };
 
     const handleLogoClick = (event) => {
       event.preventDefault();
       setActiveTab(0);
       setActiveButton(0);
     };
+
     return (
       <header>
         <div className="topbar">
           <div>
-            <button className="logoutBtn" onClick={checkSession}>
+            <button className="logoutBtn" onClick={questions}>
               Log out
             </button>
           </div>
@@ -523,9 +518,12 @@ const logOut = async () => {
             console.log("Password matched");
             const response = await axios.post(
               "http://localhost:8000/api/startSession",
-              matchingUser
+              matchingUser,
+              {
+                withCredentials: true,
+              }
             );
-            console.log(response)
+            console.log(response);
             setActiveTab(0);
           } else {
             console.log("Invalid password");
@@ -626,6 +624,8 @@ const logOut = async () => {
           ans_by: users[0],
           ans_date_time: date,
           comments: [],
+          upvotes: 0,
+          downvotes: 0,
         };
         await addAnswer(newAns); //add new answer object to database
         let allAnswers = await getAllAnswers();
@@ -633,9 +633,9 @@ const logOut = async () => {
         //add new answer object to associatd question's answers field
         const newAns_Id = convertAidtoAns_Id(allAnswers, newAid);
         await addAnswerToExistingQuestion(activeQuestionQid, newAns_Id);
-        await getAllQuestions();
 
-        setActiveTab(3);
+        console.log("yay");
+        setActiveTab(0);
       }
     };
 
@@ -673,14 +673,13 @@ const logOut = async () => {
     setActiveQuestionQid,
     setActiveTag,
   }) {
-    var mapQstns = true;
-
     const handleTagClick = (event) => {
       event.preventDefault();
-      setActiveTag(event.target.id); //id refers to html id of object, not the tid.
+      setActiveTag(event.target.id);
       setActiveTab(0);
       setActiveButton(3);
     };
+
     return (
       <div className="questionPage">
         <div id="homePage">
@@ -723,10 +722,10 @@ const logOut = async () => {
           </div>
         </div>
         <div id="dynamicQuestions">
-          {currQuestions.length === 0 ? (mapQstns = false) : (mapQstns = true)}
-          {mapQstns
-            ? currQuestions.map((question) => (
-                <div key={question.qid} className="qstnBox">
+          {currQuestions.length === 0
+            ? null
+            : currQuestions.map((question, index) => (
+                <div key={index} className="qstnBox">
                   <div className="ansViews qstnContent">
                     <span className="ansPartOfQstnDisplay">
                       {question.answers.length} answers
@@ -739,38 +738,40 @@ const logOut = async () => {
                     <button
                       className="titlePartOfQstnDisplay"
                       onClick={() => {
-                        question.views++;
+                        incrementViewCount(question.qid);
                         setActiveQuestionQid(question.qid);
                         setActiveTab(3);
                       }}
                     >
                       {question.title}
                     </button>
-                    {/* <div className="qTagBox">  figure out how to display names of tags instead of _ids
-                      {questions.tags.map(tid => (
-                        <div
-                          key={tid}
-                          id={tid}
-                          className="qTag"
-                          onClick={handleTagClick}
-                        >
-                          {tid} //change to name later 
-                        </div>
-                      ))}
-                    </div> */}
+                    <div className="qSummaryBox">{question.summary}</div>
+                    <div className="qTagBox">
+                      {question.tags.map((tid) => {
+                        const matchingTag = tags.find((tag) => tag._id === tid);
+                        return (
+                          <div
+                            key={matchingTag.tid}
+                            id={matchingTag.tid}
+                            className="qTag"
+                            onClick={handleTagClick}
+                          >
+                            {matchingTag.name}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div className="qstnTime qstnContent">
                     <span className="usernamePartOfQstnDisplay">
-                      {question.askedBy}
+                      {question.asked_by + " "}
                     </span>
                     <span className="datePartOfQstnDisplay">
-                      {" "}
                       asked {formattedDateOfQstn(question)}
                     </span>
                   </div>
                 </div>
-              ))
-            : null}
+              ))}
         </div>
       </div>
     );
@@ -872,11 +873,12 @@ const logOut = async () => {
           tags: qstnTags,
           comments: [],
           answers: [],
-          asked_by: users[0], //change to grabbing user from session id
+          asked_by: users[0].username, //change to grabbing user from session id
           ask_date_time: date,
           views: 0,
+          upvotes: 0,
+          downvotes: 0,
         };
-
         addQuestion(qstn);
         await getAllQuestions();
         setActiveTab(0);
@@ -975,7 +977,7 @@ const logOut = async () => {
     );
 
     sortAnsByDate(currAnswers);
-    console.log(qstnComments);
+    //console.log(qstnComments);
     function handleAnsQues(event) {
       event.preventDefault();
       setActiveTab(4);
@@ -1009,7 +1011,7 @@ const logOut = async () => {
               dangerouslySetInnerHTML={{ __html: question.text }}
             ></div>
             <div className="qAskedBy">
-              <span id="userAnsrPage">{question.asked_by}</span>
+              <span id="userAnsrPage">{console.log(question.asked_by)}</span>
               <span id="dateAnsrPage">{formattedDateOfQstn(question)}</span>
             </div>
           </div>
@@ -1041,7 +1043,7 @@ const logOut = async () => {
             <div className="aPageAnswer" key={index}>
               <p className="aPageText">{answer.text}</p>
               <div className="aPageAskedBy">
-                <span className="userAnsrPage">{answer.ans_by}</span>
+                <span className="userAnsrPage">{yay(answer)}</span>
                 <span className="dateAnsrPage">
                   {formattedDateOfAns(answer)}
                 </span>
@@ -1054,6 +1056,10 @@ const logOut = async () => {
         </button>
       </div>
     );
+  }
+  function yay(yay) {
+    console.log(yay);
+    //return yay;
   }
 
   function TagsPage({ setActiveTab, setActiveTag, setActiveButton }) {
@@ -1223,6 +1229,79 @@ const logOut = async () => {
     return questionData;
   }
 
+  async function upvoteQuestion(questionId) {
+    try {
+      const response = await axios.post(`/api/questions/${questionId}/upvote`, {
+        userId: "currentUserId", // Replace 'currentUserId' with the actual user ID
+      });
+      console.log(response.data.message);
+      // Update the question's upvote count or any other UI changes
+    } catch (error) {
+      console.log(error.response.data.message);
+      // Handle error and show appropriate error message to the user
+    }
+  }
+
+  async function downvoteQuestion(questionId) {
+    try {
+      const response = await axios.post(
+        `/api/questions/${questionId}/downvote`,
+        {
+          userId: "currentUserId", // Replace 'currentUserId' with the actual user ID
+        }
+      );
+      console.log(response.data.message);
+      // Update the question's downvote count or any other UI changes
+    } catch (error) {
+      console.log(error.response.data.message);
+      // Handle error and show appropriate error message to the user
+    }
+  }
+
+  async function removeUpvote(questionId) {
+    try {
+      const response = await axios.post(
+        `/api/questions/${questionId}/removeUpvote`,
+        {
+          userId: "currentUserId", // Replace 'currentUserId' with the actual user ID
+        }
+      );
+      console.log(response.data.message);
+      // Update the question's upvote count or any other UI changes
+    } catch (error) {
+      console.log(error.response.data.message);
+      // Handle error and show appropriate error message to the user
+    }
+  }
+
+  async function removeDownvote(questionId) {
+    try {
+      const response = await axios.post(
+        `/api/questions/${questionId}/removeDownvote`,
+        {
+          userId: "currentUserId", // Replace 'currentUserId' with the actual user ID
+        }
+      );
+      console.log(response.data.message);
+      // Update the question's downvote count or any other UI changes
+    } catch (error) {
+      console.log(error.response.data.message);
+      // Handle error and show appropriate error message to the user
+    }
+  }
+
+  async function incrementViewCount(qid) {
+    try {
+      const response = await axios.patch(
+        `http://localhost:8000/api/incrementViewCount/${qid}`
+      );
+      await getAllQuestions();
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async function getAllAnswers() {
     let answerData;
     await axios
@@ -1263,6 +1342,21 @@ const logOut = async () => {
         console.log(err);
       });
     return commentData;
+  }
+
+  async function activeSession() {
+    await axios
+      .get("http://localhost:8000/api/checkSession", {
+        withCredentials: true,
+      })
+      .then((res) => {
+        console.log(res.data.user.username);
+        setActiveUser(res.data.user.username);
+        return res.data.loggedIn;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   function formattedDateOfQstn(qstn) {
