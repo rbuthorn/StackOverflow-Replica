@@ -64,8 +64,8 @@ const questionModelSchema = new Schema({
     default: "posts/question/_id",
     immutable: true,
   },
-  upvotes: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  downvotes: [{ type: Schema.Types.ObjectId, ref: "User" }],
+  upvotes: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }],
+  downvotes: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }],
 });
 
 const questionModel = mongoose.model("questionModel", questionModelSchema);
