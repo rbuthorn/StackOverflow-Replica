@@ -803,7 +803,7 @@ export function FakeStackOverflowFunc() {
                   </div>
                   <div className="qstnTime qstnContent">
                     <span className="usernamePartOfQstnDisplay">
-                      {console.log(question)} {getUserBy_Id(question.asked_by) + " "}
+                    {getUserBy_Id(question.asked_by).username + " "}
                     </span>
                     <span className="datePartOfQstnDisplay">
                       asked {formattedDateOfQstn(question)}
