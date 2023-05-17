@@ -13,8 +13,7 @@ const answerModelSchema = new Schema({
     required: [true, "no text given"],
   },
   ans_by: {
-    type: String,
-    ref: "userModel",
+    type: String
   },
   ans_date_time: {
     type: Date,

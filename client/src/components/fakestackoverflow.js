@@ -928,7 +928,7 @@ export function FakeStackOverflowFunc() {
           tags: qstnTags,
           comments: [],
           answers: [],
-          asked_by: users[0].username, //change to grabbing user from session id
+          asked_by: users[0], //change to grabbing user from session id
           ask_date_time: date,
           views: 0,
           upvotes: 0,
@@ -1021,7 +1021,8 @@ export function FakeStackOverflowFunc() {
 
   function AnswersPage({ setActiveTab, activeQuestionQid }) {
     const [newComment, setNewComment] = useState(""); //which comment array is displayed
-    const [currCommentsIndex, setCurrCommentsIndex] = useState(0); //which comment array is displayed
+    const [currQstnCommentsIndex, setCurrQstnCommentsIndex] = useState(0); //which comment array is displayed
+    const [currAnsCommentsIndex, setCurrAnsCommentsIndex] = useState(0); //which comment array is displayed
     const question = getQuestionById(activeQuestionQid);
     let currAnswers = [];
     for (let i = 0; i < question.answers.length; i++) {
@@ -1033,6 +1034,7 @@ export function FakeStackOverflowFunc() {
       currQstnComments.includes(comment._id)
     );
 
+
     sortAnsByDate(currAnswers);
     //console.log(qstnComments);
     function handleAnsQues(event) {
@@ -1040,17 +1042,27 @@ export function FakeStackOverflowFunc() {
       setActiveTab(4);
     }
 
-    const handleNextClick = () => {
-      setCurrCommentsIndex(currCommentsIndex + 1);
+    const handleNextQClick = () => {
+      setCurrQstnCommentsIndex(currQstnCommentsIndex + 1);
     };
 
     function handleCommentChange(event) {
       setNewComment(event.target.value);
     }
 
-    const handlePrevClick = () => {
-      if (currCommentsIndex > 0) {
-        setCurrCommentsIndex(currCommentsIndex - 1);
+    const handlePrevQClick = () => {
+      if (currQstnCommentsIndex > 0) {
+        setCurrQstnCommentsIndex(currQstnCommentsIndex - 1);
+      }
+    };
+
+    const handleNextAComClick = () => {
+      setCurrAnsCommentsIndex(currAnsCommentsIndex + 1);
+    };
+
+    const handlePrevAComClick = () => {
+      if (currAnsCommentsIndex > 0) {
+        setCurrAnsCommentsIndex(currAnsCommentsIndex - 1);
       }
     };
 
@@ -1097,7 +1109,7 @@ export function FakeStackOverflowFunc() {
 
         const com_id = getCom_IdByDate(allComments, date);
         await addCommentToExistingQuestion(question, com_id);
-        displayQstnComments(currCommentsIndex);
+        displayQstnComments(currQstnCommentsIndex);
       }
     }
 
@@ -1126,6 +1138,35 @@ export function FakeStackOverflowFunc() {
         </div>
       );
     };
+
+  const displayAnsComments = (answer, comIndex) => {
+    const currAnsComments = [...answer.comments];
+    const ansComments = comments.filter((comment) =>
+      currAnsComments.includes(comment._id)
+    );
+
+    const currComments = ansComments.slice(comIndex * 3, (comIndex * 3) + 3);
+  
+    return (
+      <div className="answerPageAnsComments">
+        <div className="comments-section">
+          {currComments.map((comment, index) => (
+            <div className="comment-box" key={index}>
+              <div className="vote-section">
+                <div className="vote-button-container">
+                  {displayUpvoteBtn(comment._id)}
+                  <span className="vote-count">{comment.votes}</span>
+                  {displayDownvoteBtn(comment._id)}
+                </div>
+                <span className="comment-text">{comment.text}</span>
+                <span className="comment-asked-by">commented by {comment.comment_by}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
     return (
       <div id="answerPage">
@@ -1160,58 +1201,62 @@ export function FakeStackOverflowFunc() {
 
           <div className="aPageHeader-2">
             <div className="qVotes">
-              <button
+              { activeUser && <button
                 type="button"
                 className="qUpvote"
                 onClick={() => upvoteQuestion(question._id)}
               >
                 upvote
-              </button>
+              </button>}
               <h3 id="qNumVotes">
-                {question.upvotes.length - question.downvotes.length}
+                {question.upvotes.length - question.downvotes.length} votes
               </h3>
-              <button
+              { activeUser && <button
                 type="button"
                 className="qDownvote"
                 onClick={() => downvoteQuestion(question._id)}
               >
                 downvote
-              </button>
+              </button>}
             </div>
             <div
               id="qText"
               dangerouslySetInnerHTML={{ __html: question.text }}
             ></div>
             <div className="qAskedBy">
-              <span id="userAnsrPage">{question.asked_by}</span>
+              <span id="userAnsrPage">{getUserBy_Id(question.asked_by).username}</span>
               <span id="dateAnsrPage">
                 asked {formattedDateOfQstn(question)}
               </span>
             </div>
           </div>
-          {displayQstnComments(currCommentsIndex)}
-          <button onClick={handlePrevClick}>Previous</button>
-          <button onClick={handleNextClick}>Next</button>
-          <input
-            onChange={handleCommentChange}
-            type="text"
-            className="new-comment-input"
-            placeholder="comment..."
-            onKeyDown={handleNewComment}
-            value={newComment}
-          ></input>
-        </div>
+            {displayQstnComments(currQstnCommentsIndex)}
+            <button onClick={handlePrevQClick}>Previous</button>
+            <button onClick={handleNextQClick}>Next</button>
+            <input 
+              onChange={handleCommentChange}
+              type="text"
+              className="new-comment-input"
+              placeholder="comment..."
+              onKeyDown={handleNewComment}
+              value={newComment}
+            >
+            </input>
+          </div>
 
         <div id="aPageAnswers">
           {currAnswers.map((answer, index) => (
-            <div className="aPageAnswer" key={index}>
-              <p className="aPageText">{answer.text}</p>
-              <div className="aPageAskedBy">
-                <span className="userAnsrPage">{answer.ans_by}</span>
-                <span className="dateAnsrPage">
-                  answered {formattedDateOfAns(answer)}
-                </span>
+            <div className = "aPageOverall"> 
+              <div className="aPageAnswer" key={index}>
+                <p className="aPageText">{answer.text}</p>
+                <div className="aPageAskedBy">
+                  <span className="userAnsrPage">{getUserBy_Id(answer.ans_by).username}</span>
+                  <span className="dateAnsrPage">
+                    answered {formattedDateOfAns(answer)}
+                  </span>
+                </div>
               </div>
+              {displayAnsComments(answer, currAnsCommentsIndex)}
             </div>
           ))}
         </div>
@@ -1720,7 +1765,7 @@ export function FakeStackOverflowFunc() {
       console.log(response.data.message);
       // Update the question's upvote count or any other UI changes
     } catch (error) {
-      console.log(error.response.data.message);
+      console.log(error);
       // Handle error and show appropriate error message to the user
     }
   }
@@ -2082,6 +2127,7 @@ export function FakeStackOverflowFunc() {
       .post("http://localhost:8000/api/addComment", {
         text: comment.text,
         com_date_time: comment.com_date_time,
+        votes:0,
         comment_by: comment.comment_by,
       })
       .then((response) => {
@@ -2135,6 +2181,28 @@ export function FakeStackOverflowFunc() {
       .catch((error) => {
         console.log(error);
       });
+    }
+  async function addCommentToExistingQuestion(activeQid, newCom_Id) {
+    await axios
+      .post("http://localhost:8000/api/addCommentToExistingQuestion", {
+        activeQid: activeQid,
+        newCom_Id: newCom_Id,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    await getAllQuestions();
+  }
+
+
+  async function handleCommentVote(c_id, value){ //value = 1 if upvote, -1 if downvote
+    await axios.post("http://localhost:8000/api/handleCommentVote",
+        {c_id: c_id, value: value})
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
     await getAllComments();
     await getAllQuestions();
   }
@@ -2148,28 +2216,21 @@ export function FakeStackOverflowFunc() {
     return -1;
   }
 
-  async function addCommentToExistingQuestion(question, comment) {
-    await axios
-      .post("http://localhost:8000/api/addCommentToExistingQuestion", {
-        question: question,
-        comment: comment,
-      })
-      .then((response) => {
-        console.log(response);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-    await getAllQuestions();
-  }
-
-  function getUserBy_Id(_id) {
-    // gets answer by the _id field in answers, not the aid field
-    for (let i = 0; i < users.length; i++) {
-      if (users[i]._id === _id) {
-        return users[i];
-      }
-    }
-    return -1;
-  }
+async function addCommentToExistingQuestion(question, comment){
+  await axios.post("http://localhost:8000/api/addCommentToExistingQuestion",
+   {question: question, comment: comment})
+  .then(response => {console.log(response)})
+  .catch(error => {console.log(error)})
+  await getAllQuestions();
 }
+
+function getUserBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+  for (let i = 0; i < users.length; i++) {
+    if (users[i]._id === _id) {
+    return users[i];
+    }
+  }
+  return -1;
+}
+
+  }
