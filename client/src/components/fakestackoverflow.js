@@ -1150,7 +1150,6 @@ export function FakeStackOverflowFunc() {
               </span>
             </div>
           </div>
-          <div>
             {displayQstnComments(currCommentsIndex)}
             <button onClick={handlePrevClick}>Previous</button>
             <button onClick={handleNextClick}>Next</button>
@@ -1164,7 +1163,6 @@ export function FakeStackOverflowFunc() {
             >
             </input>
           </div>
-        </div>
 
         <div id="aPageAnswers">
           {currAnswers.map((answer, index) => (

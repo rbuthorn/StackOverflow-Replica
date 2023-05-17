@@ -315,10 +315,6 @@ header {
   margin: 10px 15px;
 }
 
-.aPageHeader-3 {
-  height: 50px;
-}
-
 .comments-section {
   width: 100%;
   max-width: 600px;
@@ -357,6 +353,12 @@ header {
 .comment-text {
   margin-left: 30px;
   font-size: small;
+}
+
+.comment-asked-by{
+  margin-left: auto;
+  font-size:small;
+  color: purple;
 }
 
 .numViewsContainer {
