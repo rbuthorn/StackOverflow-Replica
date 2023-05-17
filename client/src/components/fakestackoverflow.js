@@ -104,10 +104,11 @@ export function FakeStackOverflowFunc() {
       //console.log(await getAllQuestions());
       //console.log(await activeSession())
       if (activeUser) {
-        console.log(activeUser)
+        console.log(activeUser);
       } else {
-        console.log("no active user")
+        console.log("no active user");
       }
+      setActiveTab(8);
       /*console.log(
         await getAllTags().then((tags) =>
           tags.map((tag) => console.log("tag" + tag._id))
@@ -266,7 +267,7 @@ export function FakeStackOverflowFunc() {
               activeQuestionQid={activeQuestionQid}
             />
           );
-        //first page when entering application-welcome page
+        // first page when entering application-welcome page
         case 5:
           return (
             <WelcomePage
@@ -281,7 +282,7 @@ export function FakeStackOverflowFunc() {
               setUsers={setUsers}
             />
           );
-
+        // register page
         case 6:
           return (
             <RegisterPage
@@ -296,10 +297,12 @@ export function FakeStackOverflowFunc() {
               setUsers={setUsers}
             />
           );
-
+        // login page
         case 7:
           return <LoginPage setActiveTab={setActiveTab} />;
-
+        // user profile page
+        case 8:
+          return <UserProfile />;
         default:
           return <QuestionsPage setActiveTab={setActiveTab} />;
       }
@@ -556,7 +559,7 @@ export function FakeStackOverflowFunc() {
               }
             );
             console.log(response);
-            setActiveUser(response.data.user)
+            setActiveUser(response.data.user);
             setActiveTab(0);
           } else {
             console.log("Invalid password");
@@ -651,7 +654,7 @@ export function FakeStackOverflowFunc() {
       if (!badInput) {
         const newAid = "a" + (answers.length + 1);
         let date = new Date(Date.now());
-        console.log(activeUser)
+        console.log(activeUser);
         const newAns = {
           aid: newAid,
           text: tempText,
@@ -719,13 +722,15 @@ export function FakeStackOverflowFunc() {
         <div id="homePage">
           <div id="firstPortionOfHomePage">
             <h1 id="questionOrSearch">All Questions</h1>
-            {activeUser && <button
-              type="button"
-              id="askQuestionBtn"
-              onClick={() => setActiveTab(2)}
-            >
-              Ask Question
-            </button>}
+            {activeUser && (
+              <button
+                type="button"
+                id="askQuestionBtn"
+                onClick={() => setActiveTab(2)}
+              >
+                Ask Question
+              </button>
+            )}
           </div>
           <div id="secondPortionOfHomePage">
             <span id="numQuestionsPart">{currQuestions.length} questions</span>
@@ -1186,7 +1191,7 @@ export function FakeStackOverflowFunc() {
     );
   }
   function yay(yay) {
-    console.log(answers)
+    console.log(answers);
     /*for (let answer in answers) {
       console.log(answer)
     }*/
@@ -1244,6 +1249,28 @@ export function FakeStackOverflowFunc() {
       </div>
     );
   }
+
+  function UserProfile() {
+    return (
+      <>
+        <div className="userProfileMain">
+          <h3>{activeUser.username}</h3>
+          <h3>reputation</h3>
+          <h3>member for x time</h3>
+        </div>
+        <div className="userProfileQuestions">
+          {questions
+            .filter((question) => question.asked_by === activeUser.username)
+            .map((question, index) => (
+              <h4 key={index} className="userProfileQuestion">
+                <button>{question.title}</button>
+              </h4>
+            ))}
+        </div>
+      </>
+    );
+  }
+
 
   function displaySameTagQuestions(activeTag) {
     const currTag = getTagByTid(activeTag);
