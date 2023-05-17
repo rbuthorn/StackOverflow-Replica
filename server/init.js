@@ -76,7 +76,7 @@ function questionCreate(qid, title, summary, text, tags, comments, answers, aske
 }
 
 const populate = async () => {
-  let u1 = await adminUserCreate(userArgs[0], userArgs[1], "admin@localhost")
+  let u1 = await adminUserCreate(userArgs[0], "admin@localhost", userArgs[1])
 
   let t1 = await tagCreate('t1', 'react');
   let t2 = await tagCreate('t2', 'javascript');

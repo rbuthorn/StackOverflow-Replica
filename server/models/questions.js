@@ -43,7 +43,7 @@ const questionModelSchema = new Schema({
     },
   ],
   asked_by: {
-    type: String,
+    type: Schema.Types.ObjectId,
     ref: "userModel",
     required: [true, "no asked_by"]
   },
