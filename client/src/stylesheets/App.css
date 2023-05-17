@@ -562,3 +562,11 @@ header {
 .tagText {
   margin: 0px;
 }
+
+/* USER PROFILE PAGE */
+.userProfileMain {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  border-bottom: 2px dotted black;
+}
