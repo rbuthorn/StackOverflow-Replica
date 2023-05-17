@@ -8,17 +8,35 @@ export default class FakeStackOverflow extends React.Component {
   }
 }
 
-function FakeStackOverflowFunc() {
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [comments, setComments] = useState([]);
+export function FakeStackOverflowFunc() {
   const [activeTab, setActiveTab] = useState(5);
   const [activeTag, setActiveTag] = useState(null);
   const [activeQuestionQid, setActiveQuestionQid] = useState(null);
   const [activeButton, setActiveButton] = useState(0);
   const [currentSearch, setCurrentSearch] = useState(null);
+  const [guest, setGuest] = useState(false); //true until logged in
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [comments, setComments] = useState([]);
+
+  const startSession = (user) => {
+    fetch("/api/startSession", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Session started:", data);
+      })
+      .catch((error) => {
+        console.log("Error starting session:", error);
+      });
+  };
   const [activeUser, setActiveUser] = useState(null);
 
   useEffect(() => {
@@ -29,28 +47,38 @@ function FakeStackOverflowFunc() {
     getAllComments();
   }, []);
 
-  return (
-    <Content
-      questions={questions}
-      answers={answers}
-      tags={tags}
-      users={users}
-      setQuestions={setQuestions}
-      setAnswers={setAnswers}
-      setTags={setTags}
-      setUsers={setUsers}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      activeTag={activeTag}
-      setActiveTag={setActiveTag}
-      activeQuestionQid={activeQuestionQid}
-      setActiveQuestionQid={setActiveQuestionQid}
-      activeButton={activeButton}
-      setActiveButton={setActiveButton}
-      currentSearch={currentSearch}
-      setCurrentSearch={setCurrentSearch}
-    />
-  );
+  return <Content
+    questions={questions}
+    answers = {answers}
+    tags = {tags}
+    users = {users}
+    comments = {comments}
+    setQuestions={setQuestions}
+    setAnswers = {setAnswers}
+    setTags = {setTags}
+    setUsers = {setUsers}
+    setComments = {setComments}
+    activeTab = {activeTab}
+    setActiveTab = {setActiveTab}
+    activeTag = {activeTag}
+    setActiveTag = {setActiveTag}
+    activeQuestionQid = {activeQuestionQid}
+    setActiveQuestionQid = {setActiveQuestionQid}
+    activeButton = {activeButton}
+    setActiveButton = {setActiveButton}
+    currentSearch = {currentSearch}
+    setCurrentSearch = {setCurrentSearch}
+    guest = {guest}
+    setGuest = {setGuest}
+    />;
+
+  function getCommentBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+    for (let i = 0; i < comments.length; i++) {
+      if (comments[i]._id === _id) {
+        return comments[i];
+      }
+    }
+  }
 
   function TopBar({ setActiveTab, setCurrentSearch, setActiveButton }) {
     const [searchBarInput, setSearchBarInput] = useState("");
@@ -153,10 +181,12 @@ function FakeStackOverflowFunc() {
     answers,
     tags,
     users,
+    comments,
     setQuestions,
     setAnswers,
     setTags,
     setUsers,
+    setComments,
     activeTab,
     setActiveTab,
     activeTag,
@@ -509,11 +539,13 @@ function FakeStackOverflowFunc() {
       }
       if (!badInput) {
         const matchingUser = users.find((user) => user.email === email);
+
         try {
           const passwordMatch = await bcrypt.compare(
             password,
             matchingUser.password
           );
+
           if (passwordMatch) {
             console.log("Password matched");
             const response = await axios.post(
@@ -766,7 +798,7 @@ function FakeStackOverflowFunc() {
                   </div>
                   <div className="qstnTime qstnContent">
                     <span className="usernamePartOfQstnDisplay">
-                      {question.asked_by + " "}
+                      {console.log(question)} {getUserBy_Id(question.asked_by) + " "}
                     </span>
                     <span className="datePartOfQstnDisplay">
                       asked {formattedDateOfQstn(question)}
@@ -967,6 +999,8 @@ function FakeStackOverflowFunc() {
   }
 
   function AnswersPage({ setActiveTab, activeQuestionQid }) {
+    const [newComment, setNewComment] = useState(""); //which comment array is displayed
+    const [currCommentsIndex, setCurrCommentsIndex] = useState(0); //which comment array is displayed
     const question = getQuestionById(activeQuestionQid);
     let currAnswers = [];
     for (let i = 0; i < question.answers.length; i++) {
@@ -985,8 +1019,74 @@ function FakeStackOverflowFunc() {
       setActiveTab(4);
     }
 
-    function handleUpvote() {}
-    function handleDownvote() {}
+    const handleNextClick = () => {
+      setCurrCommentsIndex(currCommentsIndex + 1);
+    };
+  
+    function handleCommentChange(event){
+      setNewComment(event.target.value)
+    }
+
+    const handlePrevClick = () => {
+      if (currCommentsIndex > 0) {
+        setCurrCommentsIndex(currCommentsIndex - 1);
+      }
+    };
+
+    function displayUpvoteBtn(c_id){
+      if(guest){
+        return
+      }
+      else{
+        return(<button className="vote-button" onClick={() => handleCommentVote(c_id, 1)}>upvote</button>)
+      }
+    }
+
+    function displayDownvoteBtn(c_id){
+      if(guest){
+        return
+      }
+      else{
+        return(<button className="vote-button" onClick={() => handleCommentVote(c_id, -1)}>downvote</button>)
+      }
+    }
+
+    async function handleNewComment(event){
+      if (event.key === "Enter") {
+          let date = new Date(Date.now());
+          const newCom = {text: newComment, com_date_time: date, comment_by: users[0]}//change to user id session
+          await addComment(newCom);
+          const allComments = await getAllComments();
+  
+          const com_id = getCom_IdByDate(allComments, date);
+          await addCommentToExistingQuestion(question, com_id);
+          displayQstnComments(currCommentsIndex);
+        }
+    }
+  
+  const displayQstnComments = (comIndex) => {
+    const currComments = qstnComments.slice(comIndex * 3, (comIndex * 3) + 3);
+  
+    return (
+      <div className="aPageHeader-3">
+        <div className="comments-section">
+          {currComments.map((comment, index) => (
+            <div className="comment-box" key={index}>
+              <div className="vote-section">
+                <div className="vote-button-container">
+                  {displayUpvoteBtn(comment._id)}
+                  <span className="vote-count">{comment.votes}</span>
+                  {displayDownvoteBtn(comment._id)}
+                </div>
+                <span className="comment-text">{comment.text}</span>
+                <span className="comment-asked-by">commented by {comment.comment_by}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
     return (
       <div id="answerPage">
@@ -1050,26 +1150,19 @@ function FakeStackOverflowFunc() {
               </span>
             </div>
           </div>
-
-          <div className="aPageHeader-3">
-            <div className="comments-section">
-              {qstnComments.map((comment, index) => (
-                <div className="comment-box" key={index}>
-                  <div className="vote-section">
-                    <div className="vote-button-container">
-                      <button className="vote-button" onClick={handleUpvote}>
-                        upvote
-                      </button>
-                      <span className="vote-count"> {comment.votes} </span>
-                      <button className="vote-button" onClick={handleDownvote}>
-                        downvote
-                      </button>
-                    </div>
-                    <span className="comment-text">{comment.text}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div>
+            {displayQstnComments(currCommentsIndex)}
+            <button onClick={handlePrevClick}>Previous</button>
+            <button onClick={handleNextClick}>Next</button>
+            <input 
+              onChange={handleCommentChange}
+              type="text"
+              className="new-comment-input"
+              placeholder="comment..."
+              onKeyDown={handleNewComment}
+              value={newComment}
+            >
+            </input>
           </div>
         </div>
 
@@ -1152,6 +1245,67 @@ function FakeStackOverflowFunc() {
         </div>
       </div>
     );
+  }
+
+  function displaySameTagQuestions(activeTag) {
+    const currTag = getTagByTid(activeTag);
+    const currQuestions = [];
+    for (let i = 0; i < questions.length; i++) {
+      if (questions[i].tags.includes(currTag._id)) {
+        currQuestions.push(questions[i]);
+      }
+    }
+    return currQuestions;
+  }
+
+  function sortNewest() {
+    let sortedQstns = [...questions];
+    const stack = [[0, sortedQstns.length - 1]];
+    while (stack.length > 0) {
+      const [left, right] = stack.pop();
+      if (left >= right) {
+        continue;
+      }
+      let i = left;
+      let j = right;
+      const pivot = sortedQstns[Math.floor((left + right) / 2)].ask_date_time;
+      while (i <= j) {
+        while (sortedQstns[i].ask_date_time > pivot) {
+          i++;
+        }
+        while (sortedQstns[j].ask_date_time < pivot) {
+          j--;
+        }
+        if (i <= j) {
+          const temp = sortedQstns[i];
+          sortedQstns[i] = sortedQstns[j];
+          sortedQstns[j] = temp;
+          i++;
+          j--;
+        }
+      }
+      if (left < j) {
+        stack.push([left, j]);
+      }
+      if (i < right) {
+        stack.push([i, right]);
+      }
+    }
+    return sortedQstns;
+  }
+
+  function displayActive() {
+    const arrOfActiveQstns = [];
+    const currQuestions = [...questions];
+    for (let i = 0; i < currQuestions.length; i++) {
+      const mostRecentAnsDate = getMostRecentAnsDate(currQuestions[i].qid);
+      if (mostRecentAnsDate) {
+        arrOfActiveQstns.push({
+          question: currQuestions[i],
+          mostRecentAnsDate: mostRecentAnsDate,
+        });
+      }
+    }
   }
 
   function displaySameTagQuestions(activeTag) {
@@ -1691,4 +1845,40 @@ function FakeStackOverflowFunc() {
       });
     await getAllQuestions();
   }
+
+  async function handleCommentVote(c_id, value){ //value = 1 if upvote, -1 if downvote
+    await axios.post("http://localhost:8000/api/handleCommentVote",
+        {c_id: c_id, value: value})
+    .then(response => {console.log(response)})
+    .catch(error => {console.log(error)})
+    await getAllComments();
+    await getAllQuestions();
+  }; 
+
+function getCom_IdByDate(allComments, date){
+  for (let i = 0; i < allComments.length; i++) {
+      if (allComments[i].com_date_time === date.toISOString()) {
+      return allComments[i];
+      }
+  }
+  return -1;
+}
+
+async function addCommentToExistingQuestion(question, comment){
+  await axios.post("http://localhost:8000/api/addCommentToExistingQuestion",
+   {question: question, comment: comment})
+  .then(response => {console.log(response)})
+  .catch(error => {console.log(error)})
+  await getAllQuestions();
+}
+
+function getUserBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+  for (let i = 0; i < users.length; i++) {
+    if (users[i]._id === _id) {
+    return users[i];
+    }
+  }
+  return -1;
+}
+
 }
