@@ -68,11 +68,13 @@ process.on("SIGINT", () => {
 app.post("/api/questions/:questionId/upvote", async (req, res) => {
   const { questionId } = req.params;
   const { userId } = req.body;
+  console.log(questionId);
+  console.log(userId);
 
   try {
     const question = await Question.findOneAndUpdate(
       { _id: questionId },
-      { $addToSet: { upvotes: userId } },
+      { $push: { upvotes: userId } },
       { new: true }
     );
 
@@ -379,5 +381,23 @@ app.post("/api/addAnswerToExistingQuestion", async (req, res) => {
     { qid: activeQid },
     { $push: { answers: newAns_Id } },
     { new: true }
+  );
+});
+
+app.post("/api/addCommentToExistingQuestion", async (req, res) => {
+  const { activeQid, newCom_Id } = req.body;
+  await Question.findOneAndUpdate(
+    { qid: activeQid },
+    { $push: { comments: newCom_Id } },
+    { new: true }
+  );
+});
+
+
+app.post("/api/handleCommentVote", async (req, res) => {
+  const { c_id, value} = req.body;
+  await Comment.findOneAndUpdate(
+    { _id: c_id },
+    { $inc: { votes: value } },
   );
 });

@@ -400,9 +400,12 @@ header {
 .aPageAnswer {
   display: flex;
   align-items: center;
-  border-bottom: 2px dotted black;
   min-height: 15%;
   justify-content: space-between;
+}
+
+.aPageOverall{
+  border-bottom: 2px dotted black;
 }
 
 .aPageText {
