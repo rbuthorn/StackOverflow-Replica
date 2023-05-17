@@ -21,3 +21,7 @@ Add design docs in *images/*
 
 
 ## Team Member 2 Contribution
+- user sessions
+- user profile page
+- edit question page
+- uml diagram
