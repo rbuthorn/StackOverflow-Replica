@@ -45,6 +45,7 @@ const questionModelSchema = new Schema({
   asked_by: {
     type: String,
     ref: "userModel",
+    required: [true, "no asked_by"]
   },
   ask_date_time: {
     type: Date,
