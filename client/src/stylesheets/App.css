@@ -276,14 +276,6 @@ header {
   font-size: 16px;
 }
 
-.tagBox{
-  margin: 50px 50px 50px 50px;
-  border: 2px dotted black;
-  padding: 10px 10px 10px 10px;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
 .tagsRow{
   display: flex;
   justify-content: space-between;
@@ -538,14 +530,14 @@ header {
 }
 
 .tagBoxContainer {
-  width: 30%;
+  width: 40%;
   display: flex;
   justify-content: center;
   margin: 0px 0px 40px 0px;
 }
 
 .tagBox {
-  display: flex;
+  display: block;
   justify-content: center;
   align-items: center;
   flex-direction: column;
@@ -553,7 +545,13 @@ header {
   height: 52px;
   margin: 0px;
   width: 120px;
+  flex: 0 0 33%;
   text-align: center;
+  margin: 50px 50px 50px 50px;
+  border: 2px dotted black;
+  padding: 10px 10px 10px 10px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .tagLink {

@@ -381,3 +381,52 @@ app.post("/api/addAnswerToExistingQuestion", async (req, res) => {
     { new: true }
   );
 });
+
+app.post("/api/editQuestion", async (req, res) => {
+    console.log("1")
+  const {
+    _id,
+    title,
+    summary,
+    text,
+    tags,
+    comments,
+    answers,
+    asked_by,
+    ask_date_time,
+    views,
+  } = req.body;
+    console.log("2");
+
+  try {
+    console.log("3");
+    const updatedQuestion = await Question.findOneAndUpdate(
+      { _id: _id },
+      {
+        title: title,
+        summary: summary,
+        text: text,
+        tags: tags,
+        comments: comments,
+        answers: answers,
+        asked_by: asked_by,
+        ask_date_time: ask_date_time,
+        views: views,
+      },
+      { new: true } // to return the updated document
+    );
+    console.log("4");
+
+    if (updatedQuestion) {
+      res.send("Question updated successfully");
+    } else {
+      res.send("Question not found");
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal server error");
+  }
+
+});
+
+

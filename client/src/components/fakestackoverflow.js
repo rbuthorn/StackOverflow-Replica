@@ -20,6 +20,7 @@ export function FakeStackOverflowFunc() {
   const [tags, setTags] = useState([]);
   const [users, setUsers] = useState([]);
   const [comments, setComments] = useState([]);
+  const [editQuestion, setEditQuestion] = useState(null);
 
   const startSession = (user) => {
     fetch("/api/startSession", {
@@ -47,32 +48,35 @@ export function FakeStackOverflowFunc() {
     getAllComments();
   }, []);
 
-  return <Content
-    questions={questions}
-    answers = {answers}
-    tags = {tags}
-    users = {users}
-    comments = {comments}
-    setQuestions={setQuestions}
-    setAnswers = {setAnswers}
-    setTags = {setTags}
-    setUsers = {setUsers}
-    setComments = {setComments}
-    activeTab = {activeTab}
-    setActiveTab = {setActiveTab}
-    activeTag = {activeTag}
-    setActiveTag = {setActiveTag}
-    activeQuestionQid = {activeQuestionQid}
-    setActiveQuestionQid = {setActiveQuestionQid}
-    activeButton = {activeButton}
-    setActiveButton = {setActiveButton}
-    currentSearch = {currentSearch}
-    setCurrentSearch = {setCurrentSearch}
-    guest = {guest}
-    setGuest = {setGuest}
-    />;
+  return (
+    <Content
+      questions={questions}
+      answers={answers}
+      tags={tags}
+      users={users}
+      comments={comments}
+      setQuestions={setQuestions}
+      setAnswers={setAnswers}
+      setTags={setTags}
+      setUsers={setUsers}
+      setComments={setComments}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      activeTag={activeTag}
+      setActiveTag={setActiveTag}
+      activeQuestionQid={activeQuestionQid}
+      setActiveQuestionQid={setActiveQuestionQid}
+      activeButton={activeButton}
+      setActiveButton={setActiveButton}
+      currentSearch={currentSearch}
+      setCurrentSearch={setCurrentSearch}
+      guest={guest}
+      setGuest={setGuest}
+    />
+  );
 
-  function getCommentBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
+  function getCommentBy_Id(_id) {
+    // gets answer by the _id field in answers, not the aid field
     for (let i = 0; i < comments.length; i++) {
       if (comments[i]._id === _id) {
         return comments[i];
@@ -92,6 +96,7 @@ export function FakeStackOverflowFunc() {
             withCredentials: true,
           }
         );
+        setActiveTab(0);
         setActiveUser(null);
         console.log(response.data.message);
       } catch (error) {
@@ -100,34 +105,12 @@ export function FakeStackOverflowFunc() {
     };
 
     const questions = async () => {
-      //console.log(users[0].username)
-      //console.log(await getAllQuestions());
-      //console.log(await activeSession())
-      if (activeUser) {
-        console.log(activeUser);
-      } else {
-        console.log("no active user");
-      }
       setActiveTab(8);
-      /*console.log(
-        await getAllTags().then((tags) =>
-          tags.map((tag) => console.log("tag" + tag._id))
-        )
-      );
-      console.log(
-        await getAllQuestions().then((questions) =>
-          questions[0].tags.map((tid) => {
-            const matchingTag = tags.find((tag) => tag._id === tid);
-            console.log("matching tag " + matchingTag.name);
-          })
-        )
-      );*/
-      /*.tags.map((tid) => {
-        const matchingTag = tags.find((tag) => tag.id === tid);
-        const tagName = matchingTag ? matchingTag.name : "";
-        console.log(tagName);
-      });*/
     };
+
+    const login = async() => {
+      setActiveTab(5);
+    }
 
     const handleSearch = (event) => {
       if (event.key === "Enter") {
@@ -152,9 +135,21 @@ export function FakeStackOverflowFunc() {
       <header>
         <div className="topbar">
           <div>
-            <button className="logoutBtn" onClick={questions}>
-              Log out
-            </button>
+            {activeUser && (
+              <>
+                <button className="logoutBtn" onClick={questions}>
+                  User Profile
+                </button>
+                <button className="logoutBtn" onClick={logout}>
+                  Log out
+                </button>
+              </>
+            )}
+            {!activeUser && (
+              <button className="logoutBtn" onClick={login}>
+                Log in
+              </button>
+            )}
           </div>
           <div className="brand-logo">
             <a href="/" className="brand-logo" onClick={handleLogoClick}>
@@ -303,6 +298,8 @@ export function FakeStackOverflowFunc() {
         // user profile page
         case 8:
           return <UserProfile />;
+        case 9:
+          return <EditQuestionPage editQuestion={editQuestion} />;
         default:
           return <QuestionsPage setActiveTab={setActiveTab} />;
       }
@@ -562,8 +559,23 @@ export function FakeStackOverflowFunc() {
             setActiveUser(response.data.user);
             setActiveTab(0);
           } else {
-            console.log("Invalid password");
-            setPasswordError(true);
+            const match = matchingUser.password === password;
+            if (match) {
+              console.log("Password matched");
+              const response = await axios.post(
+                "http://localhost:8000/api/startSession",
+                matchingUser,
+                {
+                  withCredentials: true,
+                }
+              );
+              console.log(response);
+              setActiveUser(response.data.user);
+              setActiveTab(0);
+            } else {
+              console.log("Invalid password");
+              setPasswordError(true);
+            }
           }
         } catch (error) {
           console.log(error);
@@ -786,24 +798,27 @@ export function FakeStackOverflowFunc() {
                     </button>
                     <div className="qSummaryBox">{question.summary}</div>
                     <div className="qTagBox">
-                      {question.tags.map((tid) => {
-                        const matchingTag = tags.find((tag) => tag._id === tid);
-                        return (
-                          <div
-                            key={matchingTag.tid}
-                            id={matchingTag.tid}
-                            className="qTag"
-                            onClick={handleTagClick}
-                          >
-                            {matchingTag.name}
-                          </div>
-                        );
-                      })}
+                      {question.tags &&
+                        question.tags.map((tid) => {
+                          const matchingTag = tags.find(
+                            (tag) => tag._id === tid
+                          );
+                          return (
+                            <div
+                              key={matchingTag.tid}
+                              id={matchingTag.tid}
+                              className="qTag"
+                              onClick={handleTagClick}
+                            >
+                              {matchingTag.name}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                   <div className="qstnTime qstnContent">
                     <span className="usernamePartOfQstnDisplay">
-                    {getUserBy_Id(question.asked_by).username + " "}
+                      {getUserBy_Id(question.asked_by).username + " "}
                     </span>
                     <span className="datePartOfQstnDisplay">
                       asked {formattedDateOfQstn(question)}
@@ -830,6 +845,7 @@ export function FakeStackOverflowFunc() {
 
     const handleSubmit = async (event) => {
       event.preventDefault();
+      console.log("AHHHHH");
 
       setTitleError(false);
       setTextError(false);
@@ -1027,9 +1043,9 @@ export function FakeStackOverflowFunc() {
     const handleNextClick = () => {
       setCurrCommentsIndex(currCommentsIndex + 1);
     };
-  
-    function handleCommentChange(event){
-      setNewComment(event.target.value)
+
+    function handleCommentChange(event) {
+      setNewComment(event.target.value);
     }
 
     const handlePrevClick = () => {
@@ -1038,60 +1054,78 @@ export function FakeStackOverflowFunc() {
       }
     };
 
-    function displayUpvoteBtn(c_id){
-      if(guest){
-        return
-      }
-      else{
-        return(<button className="vote-button" onClick={() => handleCommentVote(c_id, 1)}>upvote</button>)
-      }
-    }
-
-    function displayDownvoteBtn(c_id){
-      if(guest){
-        return
-      }
-      else{
-        return(<button className="vote-button" onClick={() => handleCommentVote(c_id, -1)}>downvote</button>)
+    function displayUpvoteBtn(c_id) {
+      if (guest) {
+        return;
+      } else {
+        return (
+          <button
+            className="vote-button"
+            onClick={() => handleCommentVote(c_id, 1)}
+          >
+            upvote
+          </button>
+        );
       }
     }
 
-    async function handleNewComment(event){
+    function displayDownvoteBtn(c_id) {
+      if (guest) {
+        return;
+      } else {
+        return (
+          <button
+            className="vote-button"
+            onClick={() => handleCommentVote(c_id, -1)}
+          >
+            downvote
+          </button>
+        );
+      }
+    }
+
+    async function handleNewComment(event) {
       if (event.key === "Enter") {
-          let date = new Date(Date.now());
-          const newCom = {text: newComment, com_date_time: date, comment_by: users[0]}//change to user id session
-          await addComment(newCom);
-          const allComments = await getAllComments();
-  
-          const com_id = getCom_IdByDate(allComments, date);
-          await addCommentToExistingQuestion(question, com_id);
-          displayQstnComments(currCommentsIndex);
-        }
+        let date = new Date(Date.now());
+        const newCom = {
+          text: newComment,
+          com_date_time: date,
+          comment_by: users[0],
+        }; //change to user id session
+        await addComment(newCom);
+        const allComments = await getAllComments();
+
+        const com_id = getCom_IdByDate(allComments, date);
+        await addCommentToExistingQuestion(question, com_id);
+        displayQstnComments(currCommentsIndex);
+      }
     }
-  
-  const displayQstnComments = (comIndex) => {
-    const currComments = qstnComments.slice(comIndex * 3, (comIndex * 3) + 3);
-  
-    return (
-      <div className="aPageHeader-3">
-        <div className="comments-section">
-          {currComments.map((comment, index) => (
-            <div className="comment-box" key={index}>
-              <div className="vote-section">
-                <div className="vote-button-container">
-                  {displayUpvoteBtn(comment._id)}
-                  <span className="vote-count">{comment.votes}</span>
-                  {displayDownvoteBtn(comment._id)}
+
+    const displayQstnComments = (comIndex) => {
+      const currComments = qstnComments.slice(comIndex * 3, comIndex * 3 + 3);
+
+      return (
+        <div className="aPageHeader-3">
+          <div className="comments-section">
+            {currComments.map((comment, index) => (
+              <div className="comment-box" key={index}>
+                <div className="vote-section">
+                  <div className="vote-button-container">
+                    {displayUpvoteBtn(comment._id)}
+                    <span className="vote-count">{comment.votes}</span>
+                    {displayDownvoteBtn(comment._id)}
+                  </div>
+                  <span className="comment-text">{comment.text}</span>
+                  <span className="comment-asked-by">
+                    commented by {comment.comment_by}
+                  </span>
                 </div>
-                <span className="comment-text">{comment.text}</span>
-                <span className="comment-asked-by">commented by {comment.comment_by}</span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    );
-  };
+      );
+    };
 
     return (
       <div id="answerPage">
@@ -1155,19 +1189,18 @@ export function FakeStackOverflowFunc() {
               </span>
             </div>
           </div>
-            {displayQstnComments(currCommentsIndex)}
-            <button onClick={handlePrevClick}>Previous</button>
-            <button onClick={handleNextClick}>Next</button>
-            <input 
-              onChange={handleCommentChange}
-              type="text"
-              className="new-comment-input"
-              placeholder="comment..."
-              onKeyDown={handleNewComment}
-              value={newComment}
-            >
-            </input>
-          </div>
+          {displayQstnComments(currCommentsIndex)}
+          <button onClick={handlePrevClick}>Previous</button>
+          <button onClick={handleNextClick}>Next</button>
+          <input
+            onChange={handleCommentChange}
+            type="text"
+            className="new-comment-input"
+            placeholder="comment..."
+            onKeyDown={handleNewComment}
+            value={newComment}
+          ></input>
+        </div>
 
         <div id="aPageAnswers">
           {currAnswers.map((answer, index) => (
@@ -1189,12 +1222,6 @@ export function FakeStackOverflowFunc() {
         )}
       </div>
     );
-  }
-  function yay(yay) {
-    console.log(answers);
-    /*for (let answer in answers) {
-      console.log(answer)
-    }*/
   }
 
   function TagsPage({ setActiveTab, setActiveTag, setActiveButton }) {
@@ -1260,10 +1287,26 @@ export function FakeStackOverflowFunc() {
         </div>
         <div className="userProfileQuestions">
           {questions
-            .filter((question) => question.asked_by === activeUser.username)
+            .filter((question) => question.asked_by === activeUser._id)
             .map((question, index) => (
               <h4 key={index} className="userProfileQuestion">
-                <button>{question.title}</button>
+                <button
+                  className="titlePartOfQstnDisplay"
+                  onClick={() => {
+                    //incrementViewCount(question.qid);
+                    question.tags = question.tags
+                      .map((tid) => {
+                        const matchingTag = tags.find((tag) => tag._id === tid);
+                        return matchingTag.name;
+                      })
+                      .join(" ");
+                    setEditQuestion(question);
+                    console.log(question);
+                    setActiveTab(9);
+                  }}
+                >
+                  {question.title}
+                </button>
               </h4>
             ))}
         </div>
@@ -1271,6 +1314,199 @@ export function FakeStackOverflowFunc() {
     );
   }
 
+  function EditQuestionPage({ editQuestion }) {
+    const [title, setTitle] = useState(editQuestion?.title || "");
+    const [text, setText] = useState(editQuestion?.text || "");
+    const [newQuestionTags, setNewQuestionTags] = useState(
+      editQuestion?.tags || ""
+    );
+    const [summary, setSummary] = useState(editQuestion?.summary || "");
+    const [id, setId] = useState(editQuestion._id);
+    const [titleError, setTitleError] = useState(false);
+    const [textError, setTextError] = useState(false);
+    const [tagsError, setTagsError] = useState(false);
+    const [summaryError, setSummaryError] = useState(false);
+    const [hyperlinkError, setHyperlinkError] = useState(false);
+    let tagCount = tags.length;
+
+    const handleSubmit = async (event) => {
+      event.preventDefault();
+      console.log(title);
+
+      setTitleError(false);
+      setTextError(false);
+      setTagsError(false);
+      setSummaryError(false);
+      setHyperlinkError(false);
+
+      let badInput = false;
+
+      if (title.length === 0 || title.length > 100) {
+        setTitleError(true);
+        badInput = true;
+      }
+
+      let tempText = text;
+
+      if (text.length === 0) {
+        setTextError(true);
+        badInput = true;
+      } else {
+        // Check for hyperlinks
+        const regex = /\[(.*?)\]\((.*?)\)/g;
+        const matches = text.matchAll(regex);
+        for (const match of matches) {
+          const linkText = match[1];
+          const linkUrl = match[2];
+          if (
+            linkUrl.length === 0 ||
+            (!linkUrl.startsWith("https://") && !linkUrl.startsWith("http://"))
+          ) {
+            setHyperlinkError(true);
+            badInput = true;
+          } else {
+            const htmlLink = `</div><a href="${linkUrl}">${linkText}</a><div>`;
+            tempText = tempText.replace(match[0], htmlLink);
+          }
+        }
+      }
+      if (summary.length > 140) {
+        setSummaryError(true);
+        badInput = true;
+      }
+
+      if (
+        newQuestionTags === "" ||
+        newQuestionTags.length === 0 ||
+        numWords(newQuestionTags) > 5
+      ) {
+        badInput = true;
+        setTagsError(true);
+      } else {
+        for (let i = 0; i < newQuestionTags.length; i++) {
+          if (newQuestionTags[i].length > 10) {
+            badInput = true;
+            setTagsError(true);
+          }
+        }
+      }
+
+      if (!badInput) {
+        // turn tags into tag ids
+        let incomingTags = newQuestionTags.split(/\s/);
+        let tagNames = tags.map((tag) => tag.name);
+        const newTags = incomingTags.filter((name) => !tagNames.includes(name));
+
+        for (let i = 0; i < newTags.length; i++) {
+          await addTag(newTags[i], tagCount);
+          tagCount += 1;
+        }
+        let allTags = await getAllTags();
+
+        let date = new Date(Date.now());
+        const qstnTags = convertTagNamesTo_Ids(allTags, incomingTags);
+
+        let qstn = {
+          qid: "q" + (questions.length + 1),
+          title: title,
+          summary: summary,
+          text: tempText,
+          tags: qstnTags,
+          comments: [],
+          answers: [],
+          asked_by: users[0].username, //change to grabbing user from session id
+          ask_date_time: date,
+          views: 0,
+          upvotes: 0,
+          downvotes: 0,
+        };
+        qstn._id = id;
+        console.log(qstn._id);
+        editExistingQuestion(qstn);
+        await getAllQuestions();
+        setActiveTab(0);
+      }
+    };
+
+    return (
+      <form
+        className="askQuestionPage"
+        id="askQuestionForm"
+        onSubmit={handleSubmit}
+      >
+        <div id="questionTitle">
+          <h2>Question Title*</h2>
+          <p>
+            <em>Limit title to 50 characters or less</em>
+          </p>
+          <input
+            className="askQuestionInput"
+            id="questionTitleInput"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          {titleError && (
+            <p style={{ color: "red" }}>Title is either too long or empty</p>
+          )}
+        </div>
+
+        <div id="questionSummary">
+          <h2>Question Summary*</h2>
+          <p>
+            <em>Limit summary to 140 characters or less</em>
+          </p>
+          <input
+            className="askQuestionInput"
+            id="questionSummaryInput"
+            type="text"
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+          />
+          {summaryError && <p style={{ color: "red" }}>Summary is too long</p>}
+        </div>
+
+        <div id="questionText">
+          <h2>Question Text*</h2>
+          <p>
+            <em>Add details</em>
+          </p>
+          <textarea
+            className="askQuestionInput"
+            id="questionTextInput"
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+
+          {textError && <p style={{ color: "red" }}>Text cannot be empty</p>}
+          {hyperlinkError && (
+            <p style={{ color: "red" }}>Invalid hyperlink format</p>
+          )}
+        </div>
+
+        <div id="questionTags">
+          <h2>Tags*</h2>
+          <p>
+            <em>Add keywords separated by whitespace</em>
+          </p>
+          <input
+            className="askQuestionInput"
+            id="tagsInput"
+            type="text"
+            value={newQuestionTags}
+            onChange={(e) => setNewQuestionTags(e.target.value)}
+          />
+          {tagsError && <p style={{ color: "red" }}>Invalid tag input</p>}
+        </div>
+
+        <div className="formBottom">
+          <input id="postQuestionBtn" type="submit" value="Post Question" />
+          <p style={{ color: "red" }}>* indicates mandatory fields</p>
+        </div>
+      </form>
+    );
+  }
 
   function displaySameTagQuestions(activeTag) {
     const currTag = getTagByTid(activeTag);
@@ -1871,39 +2107,69 @@ export function FakeStackOverflowFunc() {
     await getAllQuestions();
   }
 
-  async function handleCommentVote(c_id, value){ //value = 1 if upvote, -1 if downvote
-    await axios.post("http://localhost:8000/api/handleCommentVote",
-        {c_id: c_id, value: value})
-    .then(response => {console.log(response)})
-    .catch(error => {console.log(error)})
-    await getAllComments();
-    await getAllQuestions();
-  }; 
-
-function getCom_IdByDate(allComments, date){
-  for (let i = 0; i < allComments.length; i++) {
-      if (allComments[i].com_date_time === date.toISOString()) {
-      return allComments[i];
-      }
-  }
-  return -1;
-}
-
-async function addCommentToExistingQuestion(question, comment){
-  await axios.post("http://localhost:8000/api/addCommentToExistingQuestion",
-   {question: question, comment: comment})
-  .then(response => {console.log(response)})
-  .catch(error => {console.log(error)})
-  await getAllQuestions();
-}
-
-function getUserBy_Id(_id) {  // gets answer by the _id field in answers, not the aid field
-  for (let i = 0; i < users.length; i++) {
-    if (users[i]._id === _id) {
-    return users[i];
+  async function editExistingQuestion(updatedQuestion) {
+    console.log(updatedQuestion.asked_by);
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/editQuestion",
+        updatedQuestion
+      );
+      console.log(updatedQuestion);
+      console.log(response);
+      await getAllQuestions();
+    } catch (error) {
+      console.log(error);
     }
   }
-  return -1;
-}
 
+  async function handleCommentVote(c_id, value) {
+    //value = 1 if upvote, -1 if downvote
+    await axios
+      .post("http://localhost:8000/api/handleCommentVote", {
+        c_id: c_id,
+        value: value,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    await getAllComments();
+    await getAllQuestions();
+  }
+
+  function getCom_IdByDate(allComments, date) {
+    for (let i = 0; i < allComments.length; i++) {
+      if (allComments[i].com_date_time === date.toISOString()) {
+        return allComments[i];
+      }
+    }
+    return -1;
+  }
+
+  async function addCommentToExistingQuestion(question, comment) {
+    await axios
+      .post("http://localhost:8000/api/addCommentToExistingQuestion", {
+        question: question,
+        comment: comment,
+      })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    await getAllQuestions();
+  }
+
+  function getUserBy_Id(_id) {
+    // gets answer by the _id field in answers, not the aid field
+    for (let i = 0; i < users.length; i++) {
+      if (users[i]._id === _id) {
+        return users[i];
+      }
+    }
+    return -1;
+  }
 }
